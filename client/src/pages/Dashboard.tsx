@@ -13,11 +13,13 @@ export default function Dashboard() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: () => fetchAPI('/dashboard/stats', 'GET', null, token),
+    refetchInterval: 5000,
   });
 
   const { data: kulusData } = useQuery({
     queryKey: ['kulus'],
     queryFn: () => fetchAPI('/kulus', 'GET', null, token),
+    refetchInterval: 5000,
   });
 
   if (isLoading) {
