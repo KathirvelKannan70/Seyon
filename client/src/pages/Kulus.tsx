@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth, fetchAPI } from '../App.tsx';
+import { useAuth, fetchAPI, SERVER_URL } from '../App.tsx';
 import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const schemeEmis: Record<string, number> = {
@@ -436,7 +436,7 @@ export default function Kulus() {
                 {membersListData.data.map((m: any) => (
                   <div key={m._id} className="p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/40 rounded-2xl flex gap-3 text-xs">
                     <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center text-lg">
-                      {m.photo ? <img src={m.photo.startsWith('http') ? m.photo : `http://localhost:5000${m.photo}`} alt="" className="w-full h-full object-cover" /> : '👩'}
+                      {m.photo ? <img src={m.photo.startsWith('http') ? m.photo : `${SERVER_URL}${m.photo}`} alt="" className="w-full h-full object-cover" /> : '👩'}
                     </div>
                     <div className="flex flex-col gap-0.5 min-w-0">
                       <span className="font-bold truncate">{m.name}</span>

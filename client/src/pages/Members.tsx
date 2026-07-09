@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth, fetchAPI } from '../App.tsx';
+import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
   QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle
@@ -111,7 +111,7 @@ export default function Members() {
     formData.append('file', e.target.files[0]);
 
     try {
-      const response = await fetch('http://localhost:5000/api/members/upload', {
+      const response = await fetch(`${API_URL}/members/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -267,7 +267,7 @@ export default function Members() {
             Bulk Import
           </button>
           <a
-            href="http://localhost:5000/api/reports/excel/members"
+            href={`${API_URL}/reports/excel/members`}
             download
             className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all"
           >
@@ -322,7 +322,7 @@ export default function Members() {
                 {/* Photo Placeholder */}
                 <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-850 flex-shrink-0 overflow-hidden border border-slate-200/30 dark:border-slate-800 flex items-center justify-center text-xl">
                   {member.photo ? (
-                    <img src={member.photo.startsWith('http') ? member.photo : `http://localhost:5000${member.photo}`} alt={member.name} className="w-full h-full object-cover" />
+                    <img src={member.photo.startsWith('http') ? member.photo : `${SERVER_URL}${member.photo}`} alt={member.name} className="w-full h-full object-cover" />
                   ) : (
                     <span>👩</span>
                   )}
@@ -390,7 +390,7 @@ export default function Members() {
 
             <div className="flex gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-850 flex-shrink-0 flex items-center justify-center text-2xl overflow-hidden">
-                {detailsOpen.photo ? <img src={detailsOpen.photo.startsWith('http') ? detailsOpen.photo : `http://localhost:5000${detailsOpen.photo}`} alt="" className="w-full h-full object-cover" /> : '👩'}
+                {detailsOpen.photo ? <img src={detailsOpen.photo.startsWith('http') ? detailsOpen.photo : `${SERVER_URL}${detailsOpen.photo}`} alt="" className="w-full h-full object-cover" /> : '👩'}
               </div>
               <div className="flex flex-col justify-center">
                 <span className="text-sm font-bold">{detailsOpen.name}</span>

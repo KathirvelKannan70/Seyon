@@ -22,7 +22,10 @@ import Expenses from './pages/Expenses.tsx';
 // ==========================================
 // API Helper Utilities
 // ==========================================
-export const API_URL = 'http://localhost:5000/api';
+export const SERVER_URL = (import.meta as any).env?.VITE_API_URL
+  ? (import.meta as any).env.VITE_API_URL.replace(/\/api$/, '')
+  : 'http://localhost:5000';
+export const API_URL = `${SERVER_URL}/api`;
 
 export const fetchAPI = async (endpoint: string, method = 'GET', body: any = null, token: string | null = null): Promise<any> => {
   let activeToken = token || localStorage.getItem('access_token');

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth, fetchAPI } from '../App.tsx';
+import { useAuth, fetchAPI, API_URL } from '../App.tsx';
 import {
   Banknote, Search, Calendar, MapPin, Printer, CheckCircle,
   AlertTriangle, RefreshCw, XCircle, Clock, AlertCircle, Plus
@@ -177,7 +177,7 @@ export default function Collections() {
             </div>
           </div>
           <a
-            href={`http://localhost:5000/api/reports/receipt/${paymentSuccess.receiptNumber}`}
+            href={`${API_URL}/reports/receipt/${paymentSuccess.receiptNumber}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-3.5 py-1.5 bg-emerald-500 text-white font-semibold text-xs rounded-xl flex items-center gap-1 hover:scale-105 active:scale-98 transition-all"

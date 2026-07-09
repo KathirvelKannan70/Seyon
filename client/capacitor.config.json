@@ -1,0 +1,6 @@
+{
+  "appId": "com.seyon.app",
+  "appName": "Seyon",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
