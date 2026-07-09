@@ -8,12 +8,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep slate bank brand colors
+        // Green and emerald brand colors matching the peacock logo
         brand: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          500: '#0ea5e9',
-          900: '#0c4a6e',
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          500: '#16a34a',
+          600: '#15803d',
+          900: '#14532d',
+        },
+        cyan: {
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          400: '#4ade80',
+          500: '#22c55e',
+          600: '#16a34a',
+          700: '#15803d',
         },
         slate: {
           950: '#030712',
