@@ -24,12 +24,14 @@ import Expenses from './pages/Expenses.tsx';
 // ==========================================
 export const API_URL = 'http://localhost:5000/api';
 
-export const fetchAPI = async (endpoint: string, method = 'GET', body: any = null, token: string | null = null) => {
+export const fetchAPI = async (endpoint: string, method = 'GET', body: any = null, token: string | null = null): Promise<any> => {
+  let activeToken = token || localStorage.getItem('access_token');
+
   const headers: any = {
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (activeToken) {
+    headers['Authorization'] = `Bearer ${activeToken}`;
   }
 
   const config: any = {
@@ -40,8 +42,40 @@ export const fetchAPI = async (endpoint: string, method = 'GET', body: any = nul
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, config);
-  const data = await response.json();
+  let response = await fetch(`${API_URL}${endpoint}`, config);
+  let data = await response.json();
+
+  // If unauthorized / token expired, try to refresh token silently
+  if (response.status === 401 && localStorage.getItem('refresh_token')) {
+    try {
+      const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: localStorage.getItem('refresh_token') }),
+      });
+      const refreshData = await refreshResponse.json();
+
+      if (refreshResponse.ok && refreshData.success) {
+        localStorage.setItem('access_token', refreshData.accessToken);
+        localStorage.setItem('refresh_token', refreshData.refreshToken);
+
+        // Retry the original request with the new token
+        config.headers['Authorization'] = `Bearer ${refreshData.accessToken}`;
+        response = await fetch(`${API_URL}${endpoint}`, config);
+        data = await response.json();
+      } else {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+      }
+    } catch (refreshError) {
+      console.error('Silent token refresh failed:', refreshError);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      window.location.href = '/login';
+    }
+  }
+
   if (!response.ok) {
     throw new Error(data.message || 'Something went wrong');
   }
