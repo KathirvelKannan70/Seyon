@@ -45,6 +45,18 @@ export default function Collections() {
     onError: (err: any) => setFormError(err.message),
   });
 
+  const bulkCollectMutation = useMutation({
+    mutationFn: (kuluId: string) => fetchAPI('/collections/bulk-collect', 'POST', { kuluId }, token),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['todayCollections'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      alert(res.message || 'Successfully bulk collected all payments for this Kulu!');
+    },
+    onError: (err: any) => {
+      alert(err.message || 'Bulk collection failed.');
+    }
+  });
+
   // Start Collection Slips Modal
   const openCollectModal = (memberItem: any, statusType: 'paid' | 'late' | 'skipped') => {
     setFormError(null);
@@ -198,14 +210,38 @@ export default function Collections() {
           {filteredData.map((block: any) => (
             <div key={block.kulu._id} className="p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-premium dark:shadow-premium-dark">
               {/* Kulu header */}
-              <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/40 pb-3">
+              <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/40 pb-3 gap-4">
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-slate-700 dark:text-slate-250">{block.kulu.name}</span>
                   <span className="text-[10px] text-slate-400">Area: {block.kulu.area?.name} • Meeting Day: {block.kulu.meetingDay} ({block.kulu.collectionTime})</span>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-400">
-                  Officer: {block.kulu.fieldOfficer?.name}
-                </span>
+                <div className="flex items-center gap-2">
+                  {block.members.some((mItem: any) => mItem.activeEmi && ['pending', 'partial', 'late'].includes(mItem.activeEmi.status)) ? (
+                    <button
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to bulk-collect today's EMIs for all members in ${block.kulu.name}?`)) {
+                          bulkCollectMutation.mutate(block.kulu._id);
+                        }
+                      }}
+                      disabled={bulkCollectMutation.isPending}
+                      className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-[9px] rounded-lg shadow-sm flex items-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                      {bulkCollectMutation.isPending && bulkCollectMutation.variables === block.kulu._id ? (
+                        <RefreshCw size={10} className="animate-spin" />
+                      ) : (
+                        <CheckCircle size={10} />
+                      )}
+                      Bulk Collect
+                    </button>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-500 uppercase">
+                      Fully Collected
+                    </span>
+                  )}
+                  <span className="px-2.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-400">
+                    Officer: {block.kulu.fieldOfficer?.name}
+                  </span>
+                </div>
               </div>
 
               {/* Members of Kulu list */}
