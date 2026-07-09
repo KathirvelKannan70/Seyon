@@ -157,8 +157,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900">
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <span className="text-lg font-extrabold bg-gradient-to-r from-cyan-600 to-brand-500 bg-clip-text text-transparent">
-            SEYON MICROFINANCE
+          <span className="text-lg font-extrabold bg-gradient-to-r from-cyan-600 to-brand-500 bg-clip-text text-transparent flex items-center gap-2">
+            <img src="/logo.png" alt="" className="w-7 h-7 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            <span>SEYON MICROFINANCE</span>
           </span>
         </div>
 

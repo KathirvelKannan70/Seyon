@@ -39,8 +39,13 @@ export default function Login() {
         <div className="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-brand-500/20 blur-3xl" />
 
         <div className="flex flex-col items-center text-center gap-2">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-brand-500 flex items-center justify-center shadow-lg shadow-brand-500/25">
-            <span className="text-2xl font-black text-white">S</span>
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-brand-500 flex items-center justify-center shadow-lg shadow-brand-500/25 overflow-hidden">
+            <img src="/logo.png" alt="" className="w-full h-full object-cover" onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const sLetter = e.currentTarget.nextSibling as HTMLElement;
+              if (sLetter) sLetter.style.display = 'block';
+            }} />
+            <span className="text-2xl font-black text-white" style={{ display: 'none' }}>S</span>
           </div>
           <h2 className="text-2xl font-extrabold text-white mt-2">Seyon Microfinance</h2>
           <p className="text-slate-400 text-xs tracking-wide uppercase">Enterprise Cash Register</p>
