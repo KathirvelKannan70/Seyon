@@ -8,6 +8,7 @@ export default function Kulus() {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingKulu, setEditingKulu] = useState<any>(null);
+  const [viewingMembersKulu, setViewingMembersKulu] = useState<any>(null);
 
   // Form States
   const [name, setName] = useState('');
@@ -33,6 +34,12 @@ export default function Kulus() {
   const { data: staffData } = useQuery({
     queryKey: ['staff'],
     queryFn: () => fetchAPI('/auth/staff', 'GET', null, token),
+  });
+
+  const { data: membersListData, isLoading: membersLoading } = useQuery({
+    queryKey: ['kuluMembers', viewingMembersKulu?._id],
+    queryFn: () => fetchAPI(`/members?kuluId=${viewingMembersKulu._id}`, 'GET', null, token),
+    enabled: !!viewingMembersKulu?._id,
   });
 
   // Mutations
@@ -148,7 +155,7 @@ export default function Kulus() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {kulusData?.data?.map((kulu: any) => (
-            <div key={kulu._id} className="p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col justify-between shadow-premium dark:shadow-premium-dark hover:scale-[1.01] transition-all">
+            <div key={kulu._id} onClick={() => setViewingMembersKulu(kulu)} className="p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col justify-between shadow-premium dark:shadow-premium-dark hover:scale-[1.01] hover:border-brand-500/35 cursor-pointer transition-all">
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2.5">
@@ -191,13 +198,13 @@ export default function Kulus() {
                 <span className="text-[10px] text-slate-400 font-semibold">{kulu.memberCount} Members Registered</span>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => openEditModal(kulu)}
+                    onClick={(e) => { e.stopPropagation(); openEditModal(kulu); }}
                     className="p-1.5 text-slate-400 hover:text-brand-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-colors"
                   >
                     <Edit2 size={14} />
                   </button>
                   <button
-                    onClick={() => handleDelete(kulu._id, kulu.name)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(kulu._id, kulu.name); }}
                     className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
                   >
                     <Trash2 size={14} />
@@ -311,6 +318,49 @@ export default function Kulus() {
                 {editingKulu ? 'Save Changes' : 'Register Kulu'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Members Directory Modal */}
+      {viewingMembersKulu && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button onClick={() => setViewingMembersKulu(null)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
+              <Plus className="rotate-45" size={20} />
+            </button>
+            <div className="flex flex-col gap-1 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-bold">Members Enrolled in {viewingMembersKulu.name}</h3>
+              <p className="text-xs text-slate-450">Showing all registered self-help group members and profiles.</p>
+            </div>
+
+            {membersLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="w-6 h-6 rounded-full border-2 border-slate-200 border-t-brand-500 animate-spin" />
+              </div>
+            ) : !membersListData?.data || membersListData.data.length === 0 ? (
+              <p className="text-center py-8 text-slate-400 text-xs">No members enrolled in this Kulu yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {membersListData.data.map((m: any) => (
+                  <div key={m._id} className="p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/40 rounded-2xl flex gap-3 text-xs">
+                    <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center text-lg">
+                      {m.photo ? <img src={m.photo.startsWith('http') ? m.photo : `http://localhost:5000${m.photo}`} alt="" className="w-full h-full object-cover" /> : '👩'}
+                    </div>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="font-bold truncate">{m.name}</span>
+                      <span className="text-[10px] text-slate-400">Phone: {m.phone}</span>
+                      <span className="text-[10px] text-slate-400">Aadhaar: {m.aadhaarNumber}</span>
+                      <span className="text-[10px] text-slate-400">Occupation: {m.occupation}</span>
+                      <span className={`w-fit mt-1 px-1.5 py-0.5 rounded text-[8px] font-bold ${
+                        m.kycStatus === 'verified' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                      }`}>
+                        {m.kycStatus.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
