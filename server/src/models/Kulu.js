@@ -37,6 +37,10 @@ const kuluSchema = new mongoose.Schema(
       enum: ['active', 'inactive'],
       default: 'active',
     },
+    startDate: {
+      type: Date,
+      default: Date.now,
+    },
     notes: {
       type: String,
       trim: true,

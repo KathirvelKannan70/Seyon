@@ -18,7 +18,17 @@ export default function Kulus() {
   const [areaId, setAreaId] = useState('');
   const [officerId, setOfficerId] = useState('');
   const [notes, setNotes] = useState('');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const handleDateChange = (dateVal: string) => {
+    setStartDate(dateVal);
+    if (dateVal) {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const selectedDay = days[new Date(dateVal).getDay()];
+      setMeetingDay(selectedDay);
+    }
+  };
 
   // Queries
   const { data: kulusData, isLoading: kulusLoading } = useQuery({
@@ -79,6 +89,7 @@ export default function Kulus() {
     setAreaId(areasData?.data?.[0]?._id || '');
     setOfficerId(staffData?.data?.filter((s: any) => s.role === 'officer')?.[0]?._id || '');
     setNotes('');
+    setStartDate(new Date().toISOString().split('T')[0]);
     setFormError(null);
     setModalOpen(true);
   };
@@ -92,6 +103,7 @@ export default function Kulus() {
     setAreaId(kulu.area?._id || '');
     setOfficerId(kulu.fieldOfficer?._id || '');
     setNotes(kulu.notes || '');
+    setStartDate(kulu.startDate ? new Date(kulu.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
     setFormError(null);
     setModalOpen(true);
   };
@@ -113,6 +125,7 @@ export default function Kulus() {
       area: areaId,
       fieldOfficer: officerId,
       notes,
+      startDate,
     };
 
     if (editingKulu) {
@@ -254,6 +267,17 @@ export default function Kulus() {
                   placeholder="e.g. Annai Street Group"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-400">Start Date</label>
+                <input
+                  type="date"
+                  required
+                  value={startDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
                   className="form-input"
                 />
               </div>

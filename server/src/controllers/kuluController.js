@@ -4,7 +4,7 @@ import AuditLog from '../models/AuditLog.js';
 
 export const createKulu = async (req, res, next) => {
   try {
-    const { kuluNumber, name, meetingDay, collectionTime, area, fieldOfficer, status, notes } = req.body;
+    const { kuluNumber, name, meetingDay, collectionTime, area, fieldOfficer, status, notes, startDate } = req.body;
 
     const kuluExists = await Kulu.findOne({ kuluNumber });
     if (kuluExists) {
@@ -20,6 +20,7 @@ export const createKulu = async (req, res, next) => {
       fieldOfficer,
       status,
       notes,
+      startDate: startDate ? new Date(startDate) : new Date(),
     });
 
     await AuditLog.create({
