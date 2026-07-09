@@ -1,0 +1,154 @@
+import Kulu from '../models/Kulu.js';
+import Member from '../models/Member.js';
+import Loan from '../models/Loan.js';
+import WeeklyCollection from '../models/WeeklyCollection.js';
+import Payment from '../models/Payment.js';
+import Income from '../models/Income.js';
+import AuditLog from '../models/AuditLog.js';
+
+export const getTodayCollections = async (req, res, next) => {
+  try {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const todayIndex = new Date().getDay();
+    const targetDay = req.query.day || days[todayIndex];
+
+    // Find Kulus scheduled for this day
+    const kulus = await Kulu.find({ meetingDay: targetDay, status: 'active' })
+      .populate('area', 'name code')
+      .populate('fieldOfficer', 'name');
+
+    const result = [];
+
+    for (const kulu of kulus) {
+      const members = await Member.find({ kulu: kulu._id, status: 'active' });
+      const membersList = [];
+
+      for (const member of members) {
+        // Find active loan for member
+        const loan = await Loan.findOne({ member: member._id, status: { $in: ['active', 'defaulted'] } });
+        let activeEmi = null;
+
+        if (loan) {
+          // Find the current pending/partial/late week
+          activeEmi = await WeeklyCollection.findOne({
+            loan: loan._id,
+            status: { $in: ['pending', 'partial', 'late'] },
+          }).sort({ weekNumber: 1 });
+        }
+
+        membersList.push({
+          member,
+          loan,
+          activeEmi,
+        });
+      }
+
+      result.push({
+        kulu,
+        members: membersList,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      day: targetDay,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const collectPayment = async (req, res, next) => {
+  try {
+    const { loanId, amountPaid, paymentMode, status, gpsLocation, remarks } = req.body;
+
+    const loan = await Loan.findById(loanId).populate('member');
+    if (!loan) {
+      return res.status(404).json({ success: false, message: 'Active Loan account not found' });
+    }
+
+    // Find the active schedule week
+    const activeEmi = await WeeklyCollection.findOne({
+      loan: loan._id,
+      status: { $in: ['pending', 'partial', 'late'] },
+    }).sort({ weekNumber: 1 });
+
+    if (!activeEmi) {
+      return res.status(400).json({ success: false, message: 'No pending EMI schedule found for this loan' });
+    }
+
+    const receiptNumber = 'REC-' + Math.floor(100000 + Math.random() * 900000);
+    const numericAmount = Number(amountPaid);
+
+    // Create payment transaction
+    const payment = await Payment.create({
+      receiptNumber,
+      loan: loan._id,
+      member: loan.member._id,
+      weeklyCollection: activeEmi._id,
+      officer: req.user.id,
+      amountPaid: numericAmount,
+      paymentMode: paymentMode || 'Cash',
+      status, // 'paid', 'partial', 'skipped', 'late'
+      gpsLocation,
+      remarks,
+    });
+
+    // Update EMI Schedule week
+    if (status === 'skipped') {
+      activeEmi.status = 'skipped';
+      activeEmi.remarks = remarks;
+    } else if (status === 'late') {
+      activeEmi.status = 'late';
+      activeEmi.remarks = remarks;
+    } else {
+      activeEmi.paidAmount += numericAmount;
+      if (activeEmi.paidAmount >= activeEmi.dueAmount) {
+        activeEmi.status = 'paid';
+      } else {
+        activeEmi.status = 'partial';
+      }
+      activeEmi.remarks = remarks;
+    }
+    await activeEmi.save();
+
+    // Update Loan balances
+    if (status !== 'skipped') {
+      loan.paidAmount += numericAmount;
+      loan.remainingAmount = Math.max(0, loan.outstandingAmount - loan.paidAmount);
+
+      if (loan.remainingAmount <= 0) {
+        loan.status = 'completed';
+      }
+      await loan.save();
+
+      // Log interest return on the Income ledger
+      await Income.create({
+        category: 'interest',
+        amount: numericAmount,
+        date: new Date(),
+        description: `Collection EMI Week ${activeEmi.weekNumber} for Loan #${loan.loanNumber}`,
+        loan: loan._id,
+      });
+    }
+
+    await AuditLog.create({
+      user: req.user.id,
+      action: 'COLLECT_EMI',
+      details: `Collected ${numericAmount} (Receipt: ${receiptNumber}) from ${loan.member.name} for Loan #${loan.loanNumber} Week ${activeEmi.weekNumber}. Status: ${status}`,
+      ipAddress: req.ip,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        payment,
+        loan,
+        activeEmi,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

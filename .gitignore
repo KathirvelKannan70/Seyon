@@ -1,0 +1,18 @@
+# Dependency directories
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Local environment files (database passwords, tokens)
+.env
+server/.env
+
+# Production builds
+dist/
+client/dist/
+server/uploads/
+uploads/
+
+# OS metadata
+.DS_Store
+Thumbs.db
