@@ -29,8 +29,8 @@ export default function Loans() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800/40">
-                  <th className="p-4">Loan ID</th>
-                  <th className="p-4">Member Name</th>
+                  <th className="p-4">Loan No</th>
+                  <th className="p-4">Kulu Name</th>
                   <th className="p-4">Scheme Type</th>
                   <th className="p-4">Principal Amount</th>
                   <th className="p-4">Weekly EMI</th>
@@ -47,10 +47,10 @@ export default function Loans() {
                     </td>
                   </tr>
                 ) : (
-                  loansData.data.map((loan: any) => (
+                  loansData.data.map((loan: any, idx: number) => (
                     <tr key={loan._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                      <td className="p-4 font-bold">{loan.loanNumber}</td>
-                      <td className="p-4 font-semibold text-slate-700 dark:text-slate-200">{loan.member?.name || 'Unknown'}</td>
+                      <td className="p-4 font-bold">#{idx + 1}</td>
+                      <td className="p-4 font-semibold text-slate-700 dark:text-slate-200">{loan.member?.kulu?.name || 'Unassigned Kulu'}</td>
                       <td className="p-4 font-semibold text-slate-400 uppercase">{loan.scheme?.name || '15K Scheme'}</td>
                       <td className="p-4 font-semibold">₹{loan.loanAmount.toLocaleString()}</td>
                       <td className="p-4">₹{loan.weeklyEMI.toLocaleString()}</td>

@@ -92,7 +92,14 @@ export const assignLoan = async (req, res, next) => {
 export const getLoans = async (req, res, next) => {
   try {
     const loans = await Loan.find()
-      .populate('member', 'name phone aadhaarNumber')
+      .populate({
+        path: 'member',
+        select: 'name phone aadhaarNumber kulu',
+        populate: {
+          path: 'kulu',
+          select: 'name kuluNumber'
+        }
+      })
       .populate('scheme', 'name loanAmount duration');
     res.status(200).json({ success: true, data: loans });
   } catch (error) {
