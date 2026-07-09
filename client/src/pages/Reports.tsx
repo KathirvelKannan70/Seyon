@@ -110,7 +110,7 @@ export default function Reports() {
                   <span className="text-[10px] text-slate-400">{report.desc}</span>
                 </div>
                 <a
-                  href={`${API_URL}/reports/excel/${report.type}`}
+                  href={`${API_URL}/reports/excel/${report.type}?token=${token}`}
                   className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 font-semibold text-[10px] rounded-xl flex items-center gap-1 hover:scale-105 active:scale-98 transition-all"
                 >
                   <Download size={12} /> Excel CSV
@@ -140,7 +140,7 @@ export default function Reports() {
                   <span className="text-[10px] text-slate-400">{report.desc}</span>
                 </div>
                 <a
-                  href={`${API_URL}/reports/summary?type=${report.type}`}
+                  href={`${API_URL}/reports/summary?type=${report.type}&token=${token}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 font-semibold text-[10px] rounded-xl flex items-center gap-1 hover:scale-105 active:scale-98 transition-all"
@@ -191,7 +191,7 @@ export default function Reports() {
 
             <div className="flex gap-2">
               <a
-                href={reportDate && reportDay ? `${API_URL}/reports/kulu-day/excel?day=${reportDay}&date=${reportDate}` : '#'}
+                href={reportDate && reportDay ? `${API_URL}/reports/kulu-day/excel?day=${reportDay}&date=${reportDate}&token=${token}` : '#'}
                 onClick={(e) => { if (!reportDate || !reportDay) e.preventDefault(); }}
                 className={`flex-1 py-2.5 px-3 font-semibold text-xs rounded-xl text-center flex items-center justify-center gap-1.5 transition-all ${
                   reportDate && reportDay
@@ -202,7 +202,7 @@ export default function Reports() {
                 <Download size={13} /> Excel CSV
               </a>
               <a
-                href={reportDate && reportDay ? `${API_URL}/reports/kulu-day/pdf?day=${reportDay}&date=${reportDate}` : '#'}
+                href={reportDate && reportDay ? `${API_URL}/reports/kulu-day/pdf?day=${reportDay}&date=${reportDate}&token=${token}` : '#'}
                 onClick={(e) => { if (!reportDate || !reportDay) e.preventDefault(); }}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -253,7 +253,7 @@ export default function Reports() {
                   <span className="text-[10px] text-slate-400">Downloads a structured JSON file containing all user registers, loan schemes, member records, and payment logs.</span>
                 </div>
                 <a
-                  href={`${API_URL}/backup/export`}
+                  href={`${API_URL}/backup/export?token=${token}`}
                   download
                   className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs rounded-xl shadow-md text-center flex items-center justify-center gap-1.5 transition-all"
                 >

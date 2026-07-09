@@ -177,7 +177,7 @@ export default function Collections() {
             </div>
           </div>
           <a
-            href={`${API_URL}/reports/receipt/${paymentSuccess.receiptNumber}`}
+            href={`${API_URL}/reports/receipt/${paymentSuccess.receiptNumber}?token=${token}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-3.5 py-1.5 bg-emerald-500 text-white font-semibold text-xs rounded-xl flex items-center gap-1 hover:scale-105 active:scale-98 transition-all"

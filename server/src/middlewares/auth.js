@@ -7,8 +7,13 @@ export const protect = async (req, res, next) => {
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.query.token) {
+    token = req.query.token;
+  }
+
+  if (token) {
     try {
-      token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'seyon_jwt_secret');
 
       req.user = {
@@ -17,22 +22,20 @@ export const protect = async (req, res, next) => {
         role: decoded.role,
       };
 
-      next();
+      return next();
     } catch (error) {
       console.error('Token validation failed:', error.message);
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
         message: 'Not authorized, token failed or expired',
       });
     }
   }
 
-  if (!token) {
-    res.status(401).json({
-      success: false,
-      message: 'Not authorized, no token provided',
-    });
-  }
+  return res.status(401).json({
+    success: false,
+    message: 'Not authorized, no token provided',
+  });
 };
 
 export const authorizeRoles = (...roles) => {
