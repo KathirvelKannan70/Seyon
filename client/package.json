@@ -12,6 +12,7 @@
     "cap:ios": "npx cap open ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@tanstack/react-query": "^5.25.0",
     "lucide-react": "^0.359.0",
