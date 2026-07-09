@@ -53,7 +53,23 @@ export default function CalendarPage() {
     if (!date) return [];
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const weekday = days[date.getDay()];
-    return kulusData?.data?.filter((k: any) => k.meetingDay === weekday && k.status === 'active') || [];
+    return kulusData?.data?.filter((k: any) => {
+      if (k.meetingDay !== weekday || k.status !== 'active') return false;
+
+      if (k.startDate) {
+        const start = new Date(k.startDate);
+        start.setHours(0, 0, 0, 0);
+        const cellDate = new Date(date);
+        cellDate.setHours(0, 0, 0, 0);
+
+        if (cellDate < start) return false;
+
+        const diffTime = cellDate.getTime() - start.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays >= 140) return false; // 20 weeks is 140 days (140 days exclusive limit)
+      }
+      return true;
+    }) || [];
   };
 
   return (
@@ -159,6 +175,16 @@ export default function CalendarPage() {
                       <MapPin size={10} />
                       <span className="truncate">{kulu.area?.name || 'No Area'}</span>
                     </div>
+                    {kulu.startDate && (
+                      <div className="flex items-center gap-1 col-span-2 mt-0.5 text-slate-400/80">
+                        <CalendarDays size={10} />
+                        <span className="truncate">
+                          Range: {new Date(kulu.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} - {
+                            new Date(new Date(kulu.startDate).getTime() + 19 * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                          }
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1 col-span-2 mt-0.5">
                       <Users size={10} />
                       <span>Officer: {kulu.fieldOfficer?.name || 'Unassigned'}</span>
