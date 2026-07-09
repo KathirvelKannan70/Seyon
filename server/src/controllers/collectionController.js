@@ -29,13 +29,14 @@ export const getTodayCollections = async (req, res, next) => {
         let loan = await Loan.findOne({ member: member._id, status: { $in: ['active', 'defaulted'] } });
         let activeEmi = null;
 
+        const schemeMap = {
+          '10k': { amount: 10000, emi: 800 },
+          '15k': { amount: 15000, emi: 930 },
+          '20k': { amount: 20000, emi: 1100 },
+        };
+        const scheme = schemeMap[kulu.schemeType || '15k'];
+
         if (!loan) {
-          const schemeMap = {
-            '10k': { amount: 10000, emi: 800 },
-            '15k': { amount: 15000, emi: 930 },
-            '20k': { amount: 20000, emi: 1100 },
-          };
-          const scheme = schemeMap[kulu.schemeType || '15k'];
           const schemeNameStr = `${kulu.schemeType?.toUpperCase() || '15K'} Auto-Scheme`;
 
           // Find or create default LoanScheme representation
@@ -72,14 +73,19 @@ export const getTodayCollections = async (req, res, next) => {
             endDate,
             status: 'active',
           });
+        }
 
+        // Self-heal: If no collections exist for this loan, create them now with the required kulu ID
+        const scheduleCount = await WeeklyCollection.countDocuments({ loan: loan._id });
+        if (scheduleCount === 0) {
           const schedule = [];
-          const start = new Date(startDate);
+          const start = new Date(loan.startDate || kulu.startDate || new Date());
           for (let i = 1; i <= 20; i++) {
             const dueDate = new Date(start.getTime() + i * 7 * 24 * 60 * 60 * 1000);
             schedule.push({
               loan: loan._id,
               member: member._id,
+              kulu: kulu._id, // Required mongoose reference
               weekNumber: i,
               dueDate,
               dueAmount: scheme.emi,
