@@ -6,6 +6,7 @@ import Payment from '../models/Payment.js';
 import Income from '../models/Income.js';
 import AuditLog from '../models/AuditLog.js';
 import Notification from '../models/Notification.js';
+import LoanScheme from '../models/LoanScheme.js';
 
 export const getTodayCollections = async (req, res, next) => {
   try {
@@ -35,26 +36,45 @@ export const getTodayCollections = async (req, res, next) => {
             '20k': { amount: 20000, emi: 1100 },
           };
           const scheme = schemeMap[kulu.schemeType || '15k'];
+          const schemeNameStr = `${kulu.schemeType?.toUpperCase() || '15K'} Auto-Scheme`;
+
+          // Find or create default LoanScheme representation
+          let dbScheme = await LoanScheme.findOne({ name: schemeNameStr });
+          if (!dbScheme) {
+            dbScheme = await LoanScheme.create({
+              name: schemeNameStr,
+              loanAmount: scheme.amount,
+              interestRate: 10,
+              processingFee: 300,
+              duration: 20,
+              weeklyEMI: scheme.emi,
+              lateFine: 50,
+              graceDays: 2,
+              status: 'active',
+            });
+          }
+
           const loanNumber = 'LN-' + Math.floor(100000 + Math.random() * 900000);
+          const startDate = kulu.startDate || new Date();
+          const endDate = new Date(new Date(startDate).getTime() + 20 * 7 * 24 * 60 * 60 * 1000);
 
           loan = await Loan.create({
             loanNumber,
             member: member._id,
-            kulu: kulu._id,
-            amount: scheme.amount,
+            scheme: dbScheme._id,
+            loanAmount: scheme.amount,
             interestRate: 10,
-            processingFee: 300,
+            weeklyEMI: scheme.emi,
             outstandingAmount: scheme.amount,
             paidAmount: 0,
             remainingAmount: scheme.amount,
-            durationWeeks: 20,
-            weeklyEMI: scheme.emi,
-            startDate: kulu.startDate || new Date(),
+            startDate,
+            endDate,
             status: 'active',
           });
 
           const schedule = [];
-          const start = new Date(kulu.startDate || new Date());
+          const start = new Date(startDate);
           for (let i = 1; i <= 20; i++) {
             const dueDate = new Date(start.getTime() + i * 7 * 24 * 60 * 60 * 1000);
             schedule.push({
