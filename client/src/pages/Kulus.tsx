@@ -3,6 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI } from '../App.tsx';
 import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle } from 'lucide-react';
 
+const schemeEmis: Record<string, number> = {
+  '10k': 800,
+  '15k': 930,
+  '20k': 1100,
+};
+
 export default function Kulus() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
@@ -20,6 +26,7 @@ export default function Kulus() {
   const [notes, setNotes] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [schemeType, setSchemeType] = useState('15k');
+  const [expandedKuluId, setExpandedKuluId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleDateChange = (dateVal: string) => {
@@ -219,10 +226,48 @@ export default function Kulus() {
                     "{kulu.notes}"
                   </p>
                 )}
+
+                {expandedKuluId === kulu._id && (
+                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/40">
+                    <span className="text-[10px] font-bold text-slate-450 mb-1.5 block">20-Week Collection Schedule:</span>
+                    <div className="grid grid-cols-2 gap-1 max-h-36 overflow-y-auto p-1 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800/30">
+                      {(() => {
+                        const emi = schemeEmis[kulu.schemeType || '15k'] || 930;
+                        const start = new Date(kulu.startDate || new Date());
+                        const weeks = [];
+                        for (let i = 0; i < 20; i++) {
+                          const current = new Date(start.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+                          weeks.push({
+                            week: i + 1,
+                            dateStr: current.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+                            target: emi * (kulu.memberCount || 0),
+                          });
+                        }
+                        return weeks.map(w => (
+                          <div key={w.week} className="flex justify-between items-center p-1.5 px-2 text-[9px] bg-white dark:bg-slate-900 border border-slate-100/50 dark:border-slate-850/50 rounded-lg">
+                            <span className="text-slate-400">W{w.week}: {w.dateStr}</span>
+                            <span className="font-bold text-brand-500">₹{w.target.toLocaleString()}</span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-800/40 pt-4 mt-4">
-                <span className="text-[10px] text-slate-400 font-semibold">{kulu.memberCount} Members Registered</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] text-slate-400 font-semibold">{kulu.memberCount} Members Registered</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedKuluId(expandedKuluId === kulu._id ? null : kulu._id);
+                    }}
+                    className="text-[9px] text-left text-brand-500 hover:text-brand-600 font-bold underline transition-colors"
+                  >
+                    {expandedKuluId === kulu._id ? 'Hide 20-Week Schedule' : 'View 20-Week Schedule'}
+                  </button>
+                </div>
                 <div className="flex gap-1">
                   <button
                     onClick={(e) => { e.stopPropagation(); openEditModal(kulu); }}
