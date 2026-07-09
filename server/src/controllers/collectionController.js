@@ -5,6 +5,7 @@ import WeeklyCollection from '../models/WeeklyCollection.js';
 import Payment from '../models/Payment.js';
 import Income from '../models/Income.js';
 import AuditLog from '../models/AuditLog.js';
+import Notification from '../models/Notification.js';
 
 export const getTodayCollections = async (req, res, next) => {
   try {
@@ -138,6 +139,21 @@ export const collectPayment = async (req, res, next) => {
       action: 'COLLECT_EMI',
       details: `Collected ${numericAmount} (Receipt: ${receiptNumber}) from ${loan.member.name} for Loan #${loan.loanNumber} Week ${activeEmi.weekNumber}. Status: ${status}`,
       ipAddress: req.ip,
+    });
+
+    let alertMsg = '';
+    if (status === 'skipped') {
+      alertMsg = `Skipped Week ${activeEmi.weekNumber} collection for ${loan.member.name} (Loan #${loan.loanNumber})`;
+    } else if (status === 'late') {
+      alertMsg = `Marked Week ${activeEmi.weekNumber} collection for ${loan.member.name} as LATE (Loan #${loan.loanNumber})`;
+    } else {
+      alertMsg = `Collected ₹${numericAmount.toLocaleString()} from ${loan.member.name} for Week ${activeEmi.weekNumber} (Receipt: ${receiptNumber})`;
+    }
+
+    await Notification.create({
+      type: 'reminder',
+      message: alertMsg,
+      user: req.user.id,
     });
 
     res.status(201).json({
