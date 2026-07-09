@@ -21,9 +21,16 @@ export default function Reports() {
   const handleDateChange = (val: string) => {
     setReportDate(val);
     if (val) {
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const dayName = days[new Date(val).getDay()];
-      setReportDay(dayName);
+      const parts = val.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const localDate = new Date(year, month, day);
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = days[localDate.getDay()];
+        setReportDay(dayName);
+      }
     }
   };
 
