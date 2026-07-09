@@ -32,6 +32,11 @@ const kuluSchema = new mongoose.Schema(
       ref: 'User',
       required: [true, 'Field officer is required'],
     },
+    incharge: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Member',
+      required: false,
+    },
     status: {
       type: String,
       enum: ['active', 'inactive'],

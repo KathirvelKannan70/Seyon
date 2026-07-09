@@ -28,6 +28,7 @@ export default function Kulus() {
   const [schemeType, setSchemeType] = useState('15k');
   const [expandedKuluId, setExpandedKuluId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [inchargeId, setInchargeId] = useState('');
 
   const handleDateChange = (dateVal: string) => {
     setStartDate(dateVal);
@@ -58,6 +59,12 @@ export default function Kulus() {
     queryKey: ['kuluMembers', viewingMembersKulu?._id],
     queryFn: () => fetchAPI(`/members?kuluId=${viewingMembersKulu._id}`, 'GET', null, token),
     enabled: !!viewingMembersKulu?._id,
+  });
+
+  const { data: editingKuluMembers } = useQuery({
+    queryKey: ['editingKuluMembers', editingKulu?._id],
+    queryFn: () => fetchAPI(`/members?kuluId=${editingKulu._id}`, 'GET', null, token),
+    enabled: !!editingKulu?._id,
   });
 
   // Mutations
@@ -98,6 +105,7 @@ export default function Kulus() {
     setOfficerId(staffData?.data?.filter((s: any) => s.role === 'officer')?.[0]?._id || '');
     setNotes('');
     setStartDate(new Date().toISOString().split('T')[0]);
+    setInchargeId('');
     setSchemeType('15k');
     setFormError(null);
     setModalOpen(true);
@@ -113,6 +121,7 @@ export default function Kulus() {
     setOfficerId(kulu.fieldOfficer?._id || '');
     setNotes(kulu.notes || '');
     setStartDate(kulu.startDate ? new Date(kulu.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+    setInchargeId(kulu.incharge?._id || '');
     setSchemeType(kulu.schemeType || '15k');
     setFormError(null);
     setModalOpen(true);
@@ -137,6 +146,7 @@ export default function Kulus() {
       notes,
       startDate,
       schemeType,
+      incharge: inchargeId || undefined,
     };
 
     if (editingKulu) {
@@ -218,6 +228,10 @@ export default function Kulus() {
                   <div className="flex items-center gap-1.5 col-span-2">
                     <User size={13} className="text-slate-400" />
                     <span className="truncate">Officer: <strong className="text-slate-600 dark:text-slate-300">{kulu.fieldOfficer?.name || 'None'}</strong></span>
+                  </div>
+                  <div className="flex items-center gap-1.5 col-span-2">
+                    <User size={13} className="text-emerald-500" />
+                    <span className="truncate">Incharge: <strong className="text-emerald-600 dark:text-emerald-400">{kulu.incharge?.name || 'None Assigned'}</strong></span>
                   </div>
                 </div>
 
@@ -390,6 +404,18 @@ export default function Kulus() {
                   ))}
                 </select>
               </div>
+
+              {editingKulu && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-slate-400">Group Incharge (Member Leader)</label>
+                  <select value={inchargeId} onChange={(e) => setInchargeId(e.target.value)} className="form-input">
+                    <option value="">No Incharge Assigned</option>
+                    {editingKuluMembers?.data?.map((m: any) => (
+                      <option key={m._id} value={m._id}>{m.name} ({m.phone})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-slate-400">Notes / Remarks</label>

@@ -5,7 +5,7 @@ import WeeklyCollection from '../models/WeeklyCollection.js';
 
 export const createKulu = async (req, res, next) => {
   try {
-    const { kuluNumber, name, meetingDay, collectionTime, area, fieldOfficer, status, notes, startDate, schemeType } = req.body;
+    const { kuluNumber, name, meetingDay, collectionTime, area, fieldOfficer, status, notes, startDate, schemeType, incharge } = req.body;
 
     const kuluExists = await Kulu.findOne({ kuluNumber });
     if (kuluExists) {
@@ -19,6 +19,7 @@ export const createKulu = async (req, res, next) => {
       collectionTime,
       area,
       fieldOfficer,
+      incharge,
       status,
       notes,
       startDate: startDate ? new Date(startDate) : new Date(),
@@ -42,7 +43,8 @@ export const getKulus = async (req, res, next) => {
   try {
     const kulus = await Kulu.find()
       .populate('area', 'name code')
-      .populate('fieldOfficer', 'name email');
+      .populate('fieldOfficer', 'name email')
+      .populate('incharge', 'name phone');
 
     const permanentSchemes = {
       '10k': { amount: 10000, emi: 800 },
@@ -99,7 +101,8 @@ export const getKuluById = async (req, res, next) => {
   try {
     const kulu = await Kulu.findById(req.params.id)
       .populate('area', 'name code')
-      .populate('fieldOfficer', 'name email');
+      .populate('fieldOfficer', 'name email')
+      .populate('incharge', 'name phone');
       
     if (!kulu) {
       return res.status(404).json({ success: false, message: 'Kulu not found' });
@@ -117,7 +120,8 @@ export const updateKulu = async (req, res, next) => {
       runValidators: true,
     })
       .populate('area', 'name code')
-      .populate('fieldOfficer', 'name email');
+      .populate('fieldOfficer', 'name email')
+      .populate('incharge', 'name phone');
 
     if (!kulu) {
       return res.status(404).json({ success: false, message: 'Kulu not found' });
