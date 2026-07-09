@@ -25,17 +25,56 @@ export const getTodayCollections = async (req, res, next) => {
       const membersList = [];
 
       for (const member of members) {
-        // Find active loan for member
-        const loan = await Loan.findOne({ member: member._id, status: { $in: ['active', 'defaulted'] } });
+        let loan = await Loan.findOne({ member: member._id, status: { $in: ['active', 'defaulted'] } });
         let activeEmi = null;
 
-        if (loan) {
-          // Find the current pending/partial/late week
-          activeEmi = await WeeklyCollection.findOne({
-            loan: loan._id,
-            status: { $in: ['pending', 'partial', 'late'] },
-          }).sort({ weekNumber: 1 });
+        if (!loan) {
+          const schemeMap = {
+            '10k': { amount: 10000, emi: 800 },
+            '15k': { amount: 15000, emi: 930 },
+            '20k': { amount: 20000, emi: 1100 },
+          };
+          const scheme = schemeMap[kulu.schemeType || '15k'];
+          const loanNumber = 'LN-' + Math.floor(100000 + Math.random() * 900000);
+
+          loan = await Loan.create({
+            loanNumber,
+            member: member._id,
+            kulu: kulu._id,
+            amount: scheme.amount,
+            interestRate: 10,
+            processingFee: 300,
+            outstandingAmount: scheme.amount,
+            paidAmount: 0,
+            remainingAmount: scheme.amount,
+            durationWeeks: 20,
+            weeklyEMI: scheme.emi,
+            startDate: kulu.startDate || new Date(),
+            status: 'active',
+          });
+
+          const schedule = [];
+          const start = new Date(kulu.startDate || new Date());
+          for (let i = 1; i <= 20; i++) {
+            const dueDate = new Date(start.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+            schedule.push({
+              loan: loan._id,
+              member: member._id,
+              weekNumber: i,
+              dueDate,
+              dueAmount: scheme.emi,
+              paidAmount: 0,
+              status: 'pending',
+            });
+          }
+          await WeeklyCollection.insertMany(schedule);
         }
+
+        // Find the current pending/partial/late week
+        activeEmi = await WeeklyCollection.findOne({
+          loan: loan._id,
+          status: { $in: ['pending', 'partial', 'late'] },
+        }).sort({ weekNumber: 1 });
 
         membersList.push({
           member,
