@@ -22,6 +22,7 @@ export default function Collections() {
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI' | 'Bank'>('Cash');
   const [remarks, setRemarks] = useState('');
+  const [customPaymentDate, setCustomPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [gpsLocation, setGpsLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState<any>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -65,6 +66,7 @@ export default function Collections() {
     setAmountPaid(statusType === 'paid' ? String(memberItem.activeEmi.dueAmount) : '0');
     setPaymentMode('Cash');
     setRemarks('');
+    setCustomPaymentDate(new Date().toISOString().split('T')[0]);
     setGpsLocation(null);
 
     // Fetch GPS coordinates in background
@@ -94,6 +96,7 @@ export default function Collections() {
       status: collectingMember.statusType, // 'paid', 'late', 'skipped'
       gpsLocation: gpsLocation || { latitude: 0, longitude: 0 },
       remarks,
+      date: customPaymentDate,
     };
 
     collectMutation.mutate(payload);
@@ -355,6 +358,17 @@ export default function Collections() {
                   <option value="UPI">UPI Payment</option>
                   <option value="Bank">Direct Bank Transfer</option>
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-slate-400">Collection Date</label>
+                <input
+                  type="date"
+                  required
+                  value={customPaymentDate}
+                  onChange={(e) => setCustomPaymentDate(e.target.value)}
+                  className="form-input"
+                />
               </div>
 
               <div className="flex flex-col gap-1">

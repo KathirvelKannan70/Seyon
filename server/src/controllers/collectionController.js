@@ -127,7 +127,7 @@ export const getTodayCollections = async (req, res, next) => {
 
 export const collectPayment = async (req, res, next) => {
   try {
-    const { loanId, amountPaid, paymentMode, status, gpsLocation, remarks } = req.body;
+    const { loanId, amountPaid, paymentMode, status, gpsLocation, remarks, date } = req.body;
 
     const loan = await Loan.findById(loanId).populate('member');
     if (!loan) {
@@ -146,6 +146,7 @@ export const collectPayment = async (req, res, next) => {
 
     const receiptNumber = 'REC-' + Math.floor(100000 + Math.random() * 900000);
     const numericAmount = Number(amountPaid);
+    const paymentDate = date ? new Date(date) : (activeEmi.dueDate && new Date(activeEmi.dueDate) < new Date() ? new Date(activeEmi.dueDate) : new Date());
 
     // Create payment transaction
     const payment = await Payment.create({
@@ -159,6 +160,8 @@ export const collectPayment = async (req, res, next) => {
       status, // 'paid', 'partial', 'skipped', 'late'
       gpsLocation,
       remarks,
+      weekNumber: activeEmi.weekNumber,
+      paymentDate,
     });
 
     // Update EMI Schedule week
@@ -193,7 +196,7 @@ export const collectPayment = async (req, res, next) => {
       await Income.create({
         category: 'interest',
         amount: numericAmount,
-        date: new Date(),
+        date: paymentDate,
         description: `Collection EMI Week ${activeEmi.weekNumber} for Loan #${loan.loanNumber}`,
         loan: loan._id,
       });
@@ -237,7 +240,7 @@ export const collectPayment = async (req, res, next) => {
 // Bulk collect payment for entire Kulu
 export const bulkCollectPayment = async (req, res, next) => {
   try {
-    const { kuluId, paymentMode = 'cash', remarks = 'Bulk Kulu Collection' } = req.body;
+    const { kuluId, paymentMode = 'cash', remarks = 'Bulk Kulu Collection', date } = req.body;
     
     // Find the Kulu
     const kulu = await Kulu.findById(kuluId);
@@ -267,6 +270,8 @@ export const bulkCollectPayment = async (req, res, next) => {
       const dueAmount = activeEmi.dueAmount - activeEmi.paidAmount;
       if (dueAmount <= 0) continue;
 
+      const paymentDate = date ? new Date(date) : (activeEmi.dueDate && new Date(activeEmi.dueDate) < new Date() ? new Date(activeEmi.dueDate) : new Date());
+
       // Update WeeklyCollection status
       activeEmi.paidAmount += dueAmount;
       activeEmi.status = 'paid';
@@ -293,13 +298,15 @@ export const bulkCollectPayment = async (req, res, next) => {
         officer: req.user.id,
         status: 'completed',
         remarks,
+        weekNumber: activeEmi.weekNumber,
+        paymentDate,
       });
 
       // Record income
       await Income.create({
         category: 'emi_collection',
         amount: dueAmount,
-        date: new Date(),
+        date: paymentDate,
         description: `EMI Collection for Kulu ${kulu.name} - ${member.name} (Week ${activeEmi.weekNumber})`,
         payment: payment._id,
       });
