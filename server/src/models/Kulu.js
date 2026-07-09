@@ -41,6 +41,11 @@ const kuluSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    schemeType: {
+      type: String,
+      enum: ['10k', '15k', '20k'],
+      default: '15k',
+    },
     notes: {
       type: String,
       trim: true,

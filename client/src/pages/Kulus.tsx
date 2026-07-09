@@ -19,6 +19,7 @@ export default function Kulus() {
   const [officerId, setOfficerId] = useState('');
   const [notes, setNotes] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [schemeType, setSchemeType] = useState('15k');
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleDateChange = (dateVal: string) => {
@@ -90,6 +91,7 @@ export default function Kulus() {
     setOfficerId(staffData?.data?.filter((s: any) => s.role === 'officer')?.[0]?._id || '');
     setNotes('');
     setStartDate(new Date().toISOString().split('T')[0]);
+    setSchemeType('15k');
     setFormError(null);
     setModalOpen(true);
   };
@@ -104,6 +106,7 @@ export default function Kulus() {
     setOfficerId(kulu.fieldOfficer?._id || '');
     setNotes(kulu.notes || '');
     setStartDate(kulu.startDate ? new Date(kulu.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+    setSchemeType(kulu.schemeType || '15k');
     setFormError(null);
     setModalOpen(true);
   };
@@ -126,6 +129,7 @@ export default function Kulus() {
       fieldOfficer: officerId,
       notes,
       startDate,
+      schemeType,
     };
 
     if (editingKulu) {
@@ -177,7 +181,7 @@ export default function Kulus() {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold">{kulu.name}</span>
-                      <span className="text-[10px] font-semibold text-slate-400">#{kulu.kuluNumber}</span>
+                      <span className="text-[10px] font-semibold text-slate-400">#{kulu.kuluNumber} ({kulu.schemeType?.toUpperCase() || '15K'} Scheme)</span>
                     </div>
                   </div>
                   <span className="px-2.5 py-0.5 rounded-md text-[9px] font-extrabold bg-brand-500/10 text-brand-500">
@@ -194,7 +198,17 @@ export default function Kulus() {
                     <Clock size={13} className="text-slate-400" />
                     <span>{kulu.collectionTime}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 col-span-2 mt-1">
+                  <div className="flex flex-col col-span-2 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-850/50 gap-0.5 my-1">
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-slate-450">Kulu Total Portfolio:</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200">₹{(kulu.totalAmount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-slate-450">Weekly Repayment Collection:</span>
+                      <span className="font-bold text-brand-500">₹{(kulu.weeklyRepayment || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 col-span-2">
                     <User size={13} className="text-slate-400" />
                     <span className="truncate">Officer: <strong className="text-slate-600 dark:text-slate-300">{kulu.fieldOfficer?.name || 'None'}</strong></span>
                   </div>
@@ -269,6 +283,15 @@ export default function Kulus() {
                   onChange={(e) => setName(e.target.value)}
                   className="form-input"
                 />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-400">Select Kulu Scheme</label>
+                <select value={schemeType} onChange={(e) => setSchemeType(e.target.value)} className="form-input">
+                  <option value="10k">10k Scheme (Weekly Repayment: ₹800/member)</option>
+                  <option value="15k">15k Scheme (Weekly Repayment: ₹930/member)</option>
+                  <option value="20k">20k Scheme (Weekly Repayment: ₹1100/member)</option>
+                </select>
               </div>
 
               <div className="flex flex-col gap-1">

@@ -4,7 +4,7 @@ import AuditLog from '../models/AuditLog.js';
 
 export const createKulu = async (req, res, next) => {
   try {
-    const { kuluNumber, name, meetingDay, collectionTime, area, fieldOfficer, status, notes, startDate } = req.body;
+    const { kuluNumber, name, meetingDay, collectionTime, area, fieldOfficer, status, notes, startDate, schemeType } = req.body;
 
     const kuluExists = await Kulu.findOne({ kuluNumber });
     if (kuluExists) {
@@ -21,6 +21,7 @@ export const createKulu = async (req, res, next) => {
       status,
       notes,
       startDate: startDate ? new Date(startDate) : new Date(),
+      schemeType: schemeType || '15k',
     });
 
     await AuditLog.create({
@@ -42,13 +43,25 @@ export const getKulus = async (req, res, next) => {
       .populate('area', 'name code')
       .populate('fieldOfficer', 'name email');
 
-    // Retrieve active member count dynamically
+    const permanentSchemes = {
+      '10k': { amount: 10000, emi: 800 },
+      '15k': { amount: 15000, emi: 930 },
+      '20k': { amount: 20000, emi: 1100 },
+    };
+
+    // Retrieve active member count dynamically and compute aggregates
     const kulusWithStats = await Promise.all(
       kulus.map(async (kulu) => {
         const memberCount = await Member.countDocuments({ kulu: kulu._id });
+        const scheme = permanentSchemes[kulu.schemeType || '15k'];
+        const totalAmount = memberCount * scheme.amount;
+        const weeklyRepayment = memberCount * scheme.emi;
+
         return {
           ...kulu.toObject(),
           memberCount,
+          totalAmount,
+          weeklyRepayment,
         };
       })
     );

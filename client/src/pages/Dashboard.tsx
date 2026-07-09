@@ -15,6 +15,11 @@ export default function Dashboard() {
     queryFn: () => fetchAPI('/dashboard/stats', 'GET', null, token),
   });
 
+  const { data: kulusData } = useQuery({
+    queryKey: ['kulus'],
+    queryFn: () => fetchAPI('/kulus', 'GET', null, token),
+  });
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6 animate-pulse">
@@ -173,30 +178,84 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Activity List */}
-      <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-premium dark:shadow-premium-dark">
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-semibold">System Audit Trail</span>
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Security Logs</span>
+      {/* Bottom Section: Kulu Targets + Audit Trail */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Kulu Weekly Repayments Target */}
+        <div className="lg:col-span-2 p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-premium dark:shadow-premium-dark">
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">Kulu Weekly Repayments Target</span>
+              <span className="text-[11px] text-slate-400">Target collection based on group sizes and mapped schemes.</span>
+            </div>
+            <span className="px-2.5 py-0.5 text-[9px] font-bold bg-brand-500/10 text-brand-500 rounded">Expected Yields</span>
+          </div>
+
+          <div className="overflow-x-auto mt-2">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 font-bold border-b border-slate-100 dark:border-slate-850/50">
+                  <th className="p-3">Kulu Name</th>
+                  <th className="p-3 text-center">Scheme Option</th>
+                  <th className="p-3 text-center">Active Size</th>
+                  <th className="p-3 text-right">Repayment/Member</th>
+                  <th className="p-3 text-right">Expected Weekly Collection</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                {!kulusData?.data || kulusData.data.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-slate-400">No street Kulu subgroups configured.</td>
+                  </tr>
+                ) : (
+                  kulusData.data.map((kulu: any) => {
+                    const schemeType: '10k' | '15k' | '20k' = (kulu.schemeType === '10k' || kulu.schemeType === '20k') ? kulu.schemeType : '15k';
+                    const schemeDetails = {
+                      '10k': { name: '10k Scheme', emi: 800 },
+                      '15k': { name: '15k Scheme', emi: 930 },
+                      '20k': { name: '20k Scheme', emi: 1100 },
+                    }[schemeType];
+
+                    return (
+                      <tr key={kulu._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                        <td className="p-3 font-semibold text-slate-700 dark:text-slate-200">{kulu.name}</td>
+                        <td className="p-3 text-center uppercase font-bold text-slate-400">{kulu.schemeType || '15k'}</td>
+                        <td className="p-3 text-center text-slate-450">{kulu.memberCount} members</td>
+                        <td className="p-3 text-right text-slate-450">₹{schemeDetails.emi.toLocaleString()}</td>
+                        <td className="p-3 text-right font-black text-emerald-500">₹{(kulu.weeklyRepayment || 0).toLocaleString()}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          {recentActivity.length === 0 ? (
-            <div className="text-center py-6 text-slate-400 text-xs">No recent operational logs.</div>
-          ) : (
-            recentActivity.map((log: any) => (
-              <div key={log._id} className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800/50 last:border-b-0 text-xs">
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-bold text-slate-700 dark:text-slate-300">{log.action.replace('_', ' ')}</span>
-                  <span className="text-slate-500 dark:text-slate-400">{log.details}</span>
+        {/* Recent Activity List */}
+        <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-premium dark:shadow-premium-dark">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold">System Audit Trail</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Security Logs</span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            {recentActivity.length === 0 ? (
+              <div className="text-center py-6 text-slate-400 text-xs">No recent operational logs.</div>
+            ) : (
+              recentActivity.map((log: any) => (
+                <div key={log._id} className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800/50 last:border-b-0 text-xs">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-bold text-slate-700 dark:text-slate-350">{log.action.replace('_', ' ')}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{log.details}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5 text-[10px] text-slate-400">
+                    <span>{new Date(log.createdAt).toLocaleTimeString()}</span>
+                    <span>{log.user?.name || 'System'}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-0.5 text-[10px] text-slate-400">
-                  <span>{new Date(log.createdAt).toLocaleTimeString()}</span>
-                  <span>{log.user?.name || 'System'}</span>
-                </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
