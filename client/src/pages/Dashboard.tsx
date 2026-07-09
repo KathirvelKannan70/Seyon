@@ -217,13 +217,19 @@ export default function Dashboard() {
                       '20k': { name: '20k Scheme', emi: 1100 },
                     }[schemeType];
 
+                    const isCollected = kulu.collectionStatus === 'collected';
+
                     return (
                       <tr key={kulu._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                        <td className="p-3 font-semibold text-slate-700 dark:text-slate-200">{kulu.name}</td>
+                        <td className="p-3 font-semibold text-slate-700 dark:text-slate-200">
+                          {kulu.name} <span className="text-[10px] text-slate-400 font-normal">(Week {kulu.currentWeekNumber || 1})</span>
+                        </td>
                         <td className="p-3 text-center uppercase font-bold text-slate-400">{kulu.schemeType || '15k'}</td>
                         <td className="p-3 text-center text-slate-450">{kulu.memberCount} members</td>
                         <td className="p-3 text-right text-slate-450">₹{schemeDetails.emi.toLocaleString()}</td>
-                        <td className="p-3 text-right font-black text-emerald-500">₹{(kulu.weeklyRepayment || 0).toLocaleString()}</td>
+                        <td className={`p-3 text-right font-black ${isCollected ? 'text-emerald-500' : 'text-rose-500 animate-pulse'}`}>
+                          ₹{(kulu.weeklyRepayment || 0).toLocaleString()} <span className="text-[9px] font-bold uppercase ml-1">({kulu.collectionStatus || 'pending'})</span>
+                        </td>
                       </tr>
                     );
                   })

@@ -1,6 +1,7 @@
 import Kulu from '../models/Kulu.js';
 import Member from '../models/Member.js';
 import AuditLog from '../models/AuditLog.js';
+import WeeklyCollection from '../models/WeeklyCollection.js';
 
 export const createKulu = async (req, res, next) => {
   try {
@@ -57,11 +58,33 @@ export const getKulus = async (req, res, next) => {
         const totalAmount = memberCount * scheme.amount;
         const weeklyRepayment = memberCount * scheme.emi;
 
+        // Calculate current week index of the 20 weeks timeline
+        const start = new Date(kulu.startDate || new Date());
+        start.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        let currentWeek = Math.floor(diffDays / 7) + 1;
+        if (currentWeek < 1) currentWeek = 1;
+        if (currentWeek > 20) currentWeek = 20;
+
+        // Find collections status for this week index
+        const weekCollections = await WeeklyCollection.find({ kulu: kulu._id, weekNumber: currentWeek });
+        let collectionStatus = 'pending';
+        if (weekCollections.length > 0) {
+          const allPaid = weekCollections.every(c => c.status === 'paid');
+          if (allPaid) {
+            collectionStatus = 'collected';
+          }
+        }
+
         return {
           ...kulu.toObject(),
           memberCount,
           totalAmount,
           weeklyRepayment,
+          currentWeekNumber: currentWeek,
+          collectionStatus,
         };
       })
     );
