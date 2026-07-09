@@ -14,6 +14,19 @@ export default function Reports() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Daily Kulu Ledger Report Parameters
+  const [reportDate, setReportDate] = useState('');
+  const [reportDay, setReportDay] = useState('');
+
+  const handleDateChange = (val: string) => {
+    setReportDate(val);
+    if (val) {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = days[new Date(val).getDay()];
+      setReportDay(dayName);
+    }
+  };
+
   const excelReports = [
     { title: 'Registered Members Directory', desc: 'Aadhaar, phone, PAN, address details, and Kulu groups.', type: 'members' },
     { title: 'Loan Accounts Ledger', desc: 'Disbursements dates, EMI sizes, amounts paid, and remaining balances.', type: 'loans' },
@@ -129,6 +142,72 @@ export default function Reports() {
                 </a>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Daily Kulu Operations Report Generator */}
+        <div className="col-span-1 lg:col-span-2 p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-premium dark:shadow-premium-dark">
+          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="p-2 bg-brand-500/10 text-brand-500 rounded-xl">
+              <FileSpreadsheet size={18} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold">Daily Kulu Operations Ledger</span>
+              <span className="text-[10px] text-slate-400">Generate operations, location, and collection reports for a specific weekday.</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mt-2">
+            <div className="flex flex-col gap-1.5 text-xs">
+              <label className="font-semibold text-slate-450">Select Date</label>
+              <input
+                type="date"
+                value={reportDate}
+                onChange={(e) => handleDateChange(e.target.value)}
+                className="form-input"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 text-xs">
+              <label className="font-semibold text-slate-450">Scheduled Day</label>
+              <select
+                value={reportDay}
+                onChange={(e) => setReportDay(e.target.value)}
+                className="form-input"
+              >
+                <option value="">Choose Weekday...</option>
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-2">
+              <a
+                href={reportDate && reportDay ? `http://localhost:5000/api/reports/kulu-day/excel?day=${reportDay}&date=${reportDate}` : '#'}
+                onClick={(e) => { if (!reportDate || !reportDay) e.preventDefault(); }}
+                className={`flex-1 py-2.5 px-3 font-semibold text-xs rounded-xl text-center flex items-center justify-center gap-1.5 transition-all ${
+                  reportDate && reportDay
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-md hover:scale-[1.02] active:scale-98'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800'
+                }`}
+              >
+                <Download size={13} /> Excel CSV
+              </a>
+              <a
+                href={reportDate && reportDay ? `http://localhost:5000/api/reports/kulu-day/pdf?day=${reportDay}&date=${reportDate}` : '#'}
+                onClick={(e) => { if (!reportDate || !reportDay) e.preventDefault(); }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex-1 py-2.5 px-3 font-semibold text-xs rounded-xl text-center flex items-center justify-center gap-1.5 transition-all ${
+                  reportDate && reportDay
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-md hover:scale-[1.02] active:scale-98'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800'
+                }`}
+              >
+                <FileText size={13} /> PDF Report
+              </a>
+            </div>
           </div>
         </div>
 

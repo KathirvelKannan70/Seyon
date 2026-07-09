@@ -196,3 +196,162 @@ export const getSummaryPDFReport = async (req, res, next) => {
     next(error);
   }
 };
+
+// Daily Kulu Excel CSV report
+export const exportKuluDayExcel = async (req, res, next) => {
+  try {
+    const { day, date } = req.query;
+    if (!day || !date) {
+      return res.status(400).json({ success: false, message: 'Day and Date parameters are required' });
+    }
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const kulus = await Kulu.find({ meetingDay: day, status: 'active' })
+      .populate('area')
+      .populate('fieldOfficer');
+
+    const permanentSchemes = {
+      '10k': { amount: 10000, emi: 800 },
+      '15k': { amount: 15000, emi: 930 },
+      '20k': { amount: 20000, emi: 1100 },
+    };
+
+    let csvContent = '\uFEFFKulu Number,Kulu Name,Scheme,Location (Area),Officer,Members,Expected EMI,Amount Collected,Pending Amount\n';
+
+    for (const kulu of kulus) {
+      const members = await Member.find({ kulu: kulu._id });
+      const memberCount = members.length;
+      const scheme = permanentSchemes[kulu.schemeType || '15k'];
+      const expected = memberCount * scheme.emi;
+
+      const memberIds = members.map(m => m._id);
+      const payments = await Payment.find({
+        member: { $in: memberIds },
+        createdAt: { $gte: startOfDay, $lte: endOfDay }
+      });
+      const collected = payments.reduce((sum, p) => sum + p.amountPaid, 0);
+      const pending = Math.max(0, expected - collected);
+
+      csvContent += `"${kulu.kuluNumber}","${kulu.name}","${kulu.schemeType?.toUpperCase() || '15K'}","${kulu.area?.name || 'Unassigned'}","${kulu.fieldOfficer?.name || 'Unassigned'}",${memberCount},${expected},${collected},${pending}\n`;
+    }
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=kulus_report_${day}_${date}.csv`);
+    res.status(200).send(csvContent);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Daily Kulu PDF report
+export const getKuluDayPDF = async (req, res, next) => {
+  try {
+    const { day, date } = req.query;
+    if (!day || !date) {
+      return res.status(400).json({ success: false, message: 'Day and Date parameters are required' });
+    }
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const kulus = await Kulu.find({ meetingDay: day, status: 'active' })
+      .populate('area')
+      .populate('fieldOfficer');
+
+    const permanentSchemes = {
+      '10k': { amount: 10000, emi: 800 },
+      '15k': { amount: 15000, emi: 930 },
+      '20k': { amount: 20000, emi: 1100 },
+    };
+
+    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=kulus_report_${day}_${date}.pdf`);
+    doc.pipe(res);
+
+    // Styling Header
+    doc.fillColor('#0f172a').rect(0, 0, 600, 70).fill();
+    doc.fillColor('#ffffff').fontSize(14).text('SEYON MICROFINANCE SYSTEM', 40, 20);
+    doc.fontSize(10).fillColor('#94a3b8').text(`KULU OPERATIONS LEDGER - ${day.toUpperCase()} (${new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })})`, 40, 42);
+
+    let y = 95;
+    
+    // Draw table headers
+    doc.fillColor('#f1f5f9').rect(40, y, 515, 20).fill();
+    doc.fillColor('#334155').font('Helvetica-Bold').fontSize(8);
+    doc.text('KULU NAME', 45, y + 6);
+    doc.text('SCHEME', 150, y + 6);
+    doc.text('LOCATION (AREA)', 210, y + 6);
+    doc.text('MEMBERS', 320, y + 6);
+    doc.text('EXPECTED', 380, y + 6);
+    doc.text('COLLECTED', 440, y + 6);
+    doc.text('PENDING', 500, y + 6);
+    y += 20;
+
+    doc.font('Helvetica').fontSize(8).fillColor('#0f172a');
+    let totalExpectedSum = 0;
+    let totalCollectedSum = 0;
+
+    for (const kulu of kulus) {
+      const members = await Member.find({ kulu: kulu._id });
+      const memberCount = members.length;
+      const scheme = permanentSchemes[kulu.schemeType || '15k'];
+      const expected = memberCount * scheme.emi;
+
+      const memberIds = members.map(m => m._id);
+      const payments = await Payment.find({
+        member: { $in: memberIds },
+        createdAt: { $gte: startOfDay, $lte: endOfDay }
+      });
+      const collected = payments.reduce((sum, p) => sum + p.amountPaid, 0);
+      const pending = Math.max(0, expected - collected);
+
+      totalExpectedSum += expected;
+      totalCollectedSum += collected;
+
+      // Draw row lines
+      doc.text(kulu.name.slice(0, 18), 45, y + 6);
+      doc.text(kulu.schemeType?.toUpperCase() || '15K', 150, y + 6);
+      doc.text(kulu.area?.name?.slice(0, 18) || 'Unassigned', 210, y + 6);
+      doc.text(`${memberCount} members`, 320, y + 6);
+      doc.text(`INR ${expected.toLocaleString()}`, 380, y + 6);
+      doc.text(`INR ${collected.toLocaleString()}`, 440, y + 6);
+      doc.text(`INR ${pending.toLocaleString()}`, 500, y + 6);
+      
+      // Draw border separator line
+      doc.strokeColor('#e2e8f0').lineWidth(0.5).moveTo(40, y + 18).lineTo(555, y + 18).stroke();
+      y += 18;
+
+      if (y > 750) {
+        doc.addPage();
+        y = 50;
+      }
+    }
+
+    // Print Total Summary
+    y += 10;
+    doc.fillColor('#f8fafc').rect(40, y, 515, 30).fill();
+    doc.strokeColor('#cbd5e1').lineWidth(1).rect(40, y, 515, 30).stroke();
+    
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(9);
+    doc.text('TOTAL SUMMARY:', 50, y + 11);
+    
+    doc.text(`Expected: INR ${totalExpectedSum.toLocaleString()}`, 180, y + 11);
+    doc.fillColor('#15803d');
+    doc.text(`Collected: INR ${totalCollectedSum.toLocaleString()}`, 300, y + 11);
+    
+    const totalPendingSum = Math.max(0, totalExpectedSum - totalCollectedSum);
+    doc.fillColor(totalPendingSum > 0 ? '#b91c1c' : '#15803d');
+    doc.text(`Pending: INR ${totalPendingSum.toLocaleString()}`, 425, y + 11);
+
+    doc.end();
+  } catch (error) {
+    next(error);
+  }
+};

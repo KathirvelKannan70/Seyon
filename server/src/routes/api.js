@@ -117,6 +117,8 @@ router.delete('/expenses/:id', protect, authorizeRoles('super_admin'), expCtrl.d
 router.get('/reports/receipt/:receiptNumber', protect, reportCtrl.getReceiptPDF);
 router.get('/reports/excel/:type', protect, reportCtrl.exportReportExcel);
 router.get('/reports/summary', protect, reportCtrl.getSummaryPDFReport);
+router.get('/reports/kulu-day/excel', protect, reportCtrl.exportKuluDayExcel);
+router.get('/reports/kulu-day/pdf', protect, reportCtrl.getKuluDayPDF);
 
 // ==========================================
 // Backup & Restore Routes
