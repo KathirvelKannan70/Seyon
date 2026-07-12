@@ -47,6 +47,7 @@ export default function Members() {
   // Files Upload States
   const [photoUrl, setPhotoUrl] = useState('');
   const [sigUrl, setSigUrl] = useState('');
+  const [aadhaarUrl, setAadhaarUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -125,7 +126,7 @@ export default function Members() {
   });
 
   // File Upload Helper
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'photo' | 'signature') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'photo' | 'signature' | 'aadhaar') => {
     if (!e.target.files?.[0]) return;
     setUploading(true);
     const formData = new FormData();
@@ -142,6 +143,7 @@ export default function Members() {
       const resData = await response.json();
       if (resData.success) {
         if (type === 'photo') setPhotoUrl(resData.url);
+        else if (type === 'aadhaar') setAadhaarUrl(resData.url);
         else setSigUrl(resData.url);
       } else {
         alert('Upload failed: ' + resData.message);
@@ -196,6 +198,7 @@ export default function Members() {
     setKycStatus('pending');
     setPhotoUrl('');
     setSigUrl('');
+    setAadhaarUrl('');
     setGps(null);
     setFormError(null);
     setModalOpen(true);
@@ -212,7 +215,7 @@ export default function Members() {
     const payload = {
       kulu: kuluId,
       photo: photoUrl,
-      signature: sigUrl,
+      aadhaarPhoto: aadhaarUrl,
       name,
       fatherName,
       gender,
@@ -343,7 +346,9 @@ export default function Members() {
                 {/* Photo Placeholder */}
                 <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-850 flex-shrink-0 overflow-hidden border border-slate-200/30 dark:border-slate-800 flex items-center justify-center text-xl">
                   {member.photo ? (
-                    <img src={member.photo.startsWith('http') ? member.photo : `${SERVER_URL}${member.photo}`} alt={member.name} className="w-full h-full object-cover" />
+                    <a href={member.photo.startsWith('http') ? member.photo : `${SERVER_URL}${member.photo}`} target="_blank" rel="noopener noreferrer" title="View Full Profile Photo">
+                      <img src={member.photo.startsWith('http') ? member.photo : `${SERVER_URL}${member.photo}`} alt={member.name} className="w-full h-full object-cover hover:scale-110 transition-transform cursor-pointer" />
+                    </a>
                   ) : (
                     <span>👩</span>
                   )}
@@ -385,6 +390,17 @@ export default function Members() {
                   >
                     <QrCode size={13} />
                   </button>
+                  {member.aadhaarPhoto && (
+                    <a
+                      href={member.aadhaarPhoto.startsWith('http') ? member.aadhaarPhoto : `${SERVER_URL}${member.aadhaarPhoto}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="View Aadhaar Card Image"
+                      className="p-2 bg-slate-50 dark:bg-slate-950 text-slate-400 hover:text-brand-500 rounded-xl hover:scale-105 transition-all flex items-center justify-center"
+                    >
+                      <FileText size={13} />
+                    </a>
+                  )}
                   <button
                     onClick={() => setDetailsOpen(member)}
                     className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
@@ -492,6 +508,18 @@ export default function Members() {
                 </div>
               )}
             </div>
+
+            {/* Aadhaar Photo Attachment */}
+            {detailsOpen.aadhaarPhoto && (
+              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Aadhaar Card Attachment</span>
+                <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-center">
+                  <a href={detailsOpen.aadhaarPhoto.startsWith('http') ? detailsOpen.aadhaarPhoto : `${SERVER_URL}${detailsOpen.aadhaarPhoto}`} target="_blank" rel="noopener noreferrer" className="hover:opacity-90 transition-opacity">
+                    <img src={detailsOpen.aadhaarPhoto.startsWith('http') ? detailsOpen.aadhaarPhoto : `${SERVER_URL}${detailsOpen.aadhaarPhoto}`} alt="Aadhaar Card" className="max-h-28 w-auto object-contain rounded-md" />
+                  </a>
+                </div>
+              </div>
+            )}
 
             {/* KYC Admin Actions */}
             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -798,9 +826,9 @@ export default function Members() {
                     {photoUrl && <span className="text-emerald-500 text-[10px]">Photo Uploaded!</span>}
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] text-slate-400">Signature Image</span>
-                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'signature')} className="text-[10px]" />
-                    {sigUrl && <span className="text-emerald-500 text-[10px]">Signature Uploaded!</span>}
+                    <span className="text-[10px] text-slate-400">Aadhaar Card Photo</span>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'aadhaar')} className="text-[10px]" />
+                    {aadhaarUrl && <span className="text-emerald-500 text-[10px]">Aadhaar Uploaded!</span>}
                   </div>
                 </div>
               </div>

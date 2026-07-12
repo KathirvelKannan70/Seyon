@@ -13,6 +13,9 @@ const memberSchema = new mongoose.Schema(
     signature: {
       type: String, // URL of signature image
     },
+    aadhaarPhoto: {
+      type: String, // URL of Aadhaar card image
+    },
     name: {
       type: String,
       required: [true, 'Member name is required'],
