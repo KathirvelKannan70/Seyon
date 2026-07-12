@@ -212,7 +212,8 @@ export const exportKuluDayExcel = async (req, res, next) => {
 
     const kulus = await Kulu.find({ meetingDay: day, status: 'active' })
       .populate('area')
-      .populate('fieldOfficer');
+      .populate('fieldOfficer')
+      .populate('incharge');
 
     const permanentSchemes = {
       '10k': { amount: 10000, emi: 800 },
@@ -220,7 +221,7 @@ export const exportKuluDayExcel = async (req, res, next) => {
       '20k': { amount: 20000, emi: 1100 },
     };
 
-    let csvContent = '\uFEFFKulu Number,Kulu Name,Scheme,Location (Area),Officer,Members,Expected EMI,Amount Collected,Pending Amount\n';
+    let csvContent = '\uFEFFKulu Number,Kulu Name,Scheme,Location (Area),Officer,Incharge Mobile,Members,Expected EMI,Amount Collected,Pending Amount\n';
 
     for (const kulu of kulus) {
       const members = await Member.find({ kulu: kulu._id });
@@ -236,7 +237,7 @@ export const exportKuluDayExcel = async (req, res, next) => {
       const collected = payments.reduce((sum, p) => sum + p.amountPaid, 0);
       const pending = Math.max(0, expected - collected);
 
-      csvContent += `"${kulu.kuluNumber}","${kulu.name}","${kulu.schemeType?.toUpperCase() || '15K'}","${kulu.area?.name || 'Unassigned'}","${kulu.fieldOfficer?.name || 'Unassigned'}",${memberCount},${expected},${collected},${pending}\n`;
+      csvContent += `"${kulu.kuluNumber}","${kulu.name}","${kulu.schemeType?.toUpperCase() || '15K'}","${kulu.area?.name || 'Unassigned'}","${kulu.fieldOfficer?.name || 'Unassigned'}","${kulu.incharge?.phone || 'N/A'}",${memberCount},${expected},${collected},${pending}\n`;
     }
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -262,7 +263,8 @@ export const getKuluDayPDF = async (req, res, next) => {
 
     const kulus = await Kulu.find({ meetingDay: day, status: 'active' })
       .populate('area')
-      .populate('fieldOfficer');
+      .populate('fieldOfficer')
+      .populate('incharge');
 
     const permanentSchemes = {
       '10k': { amount: 10000, emi: 800 },
@@ -286,12 +288,13 @@ export const getKuluDayPDF = async (req, res, next) => {
     doc.fillColor('#f1f5f9').rect(40, y, 515, 20).fill();
     doc.fillColor('#334155').font('Helvetica-Bold').fontSize(8);
     doc.text('KULU NAME', 45, y + 6);
-    doc.text('SCHEME', 150, y + 6);
-    doc.text('LOCATION (AREA)', 210, y + 6);
-    doc.text('MEMBERS', 320, y + 6);
-    doc.text('EXPECTED', 380, y + 6);
-    doc.text('COLLECTED', 440, y + 6);
-    doc.text('PENDING', 500, y + 6);
+    doc.text('SCHEME', 135, y + 6);
+    doc.text('LOCATION (AREA)', 180, y + 6);
+    doc.text('INCHARGE MOBILE', 260, y + 6);
+    doc.text('MBRS', 345, y + 6);
+    doc.text('EXPECTED', 385, y + 6);
+    doc.text('COLLECTED', 445, y + 6);
+    doc.text('PENDING', 505, y + 6);
     y += 20;
 
     doc.font('Helvetica').fontSize(8).fillColor('#0f172a');
@@ -316,13 +319,14 @@ export const getKuluDayPDF = async (req, res, next) => {
       totalCollectedSum += collected;
 
       // Draw row lines
-      doc.text(kulu.name.slice(0, 18), 45, y + 6);
-      doc.text(kulu.schemeType?.toUpperCase() || '15K', 150, y + 6);
-      doc.text(kulu.area?.name?.slice(0, 18) || 'Unassigned', 210, y + 6);
-      doc.text(`${memberCount} members`, 320, y + 6);
-      doc.text(`INR ${expected.toLocaleString()}`, 380, y + 6);
-      doc.text(`INR ${collected.toLocaleString()}`, 440, y + 6);
-      doc.text(`INR ${pending.toLocaleString()}`, 500, y + 6);
+      doc.text(kulu.name.slice(0, 15), 45, y + 6);
+      doc.text(kulu.schemeType?.toUpperCase() || '15K', 135, y + 6);
+      doc.text(kulu.area?.name?.slice(0, 13) || 'Unassigned', 180, y + 6);
+      doc.text(kulu.incharge?.phone || 'N/A', 260, y + 6);
+      doc.text(String(memberCount), 345, y + 6);
+      doc.text(expected.toLocaleString(), 385, y + 6);
+      doc.text(collected.toLocaleString(), 445, y + 6);
+      doc.text(pending.toLocaleString(), 505, y + 6);
       
       // Draw border separator line
       doc.strokeColor('#e2e8f0').lineWidth(0.5).moveTo(40, y + 18).lineTo(555, y + 18).stroke();

@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   LayoutDashboard, MapPin, Users, Landmark, Banknote, FileSpreadsheet,
-  CalendarDays, ShieldCheck, DollarSign, LogOut, Sun, Moon, Menu, X
+  CalendarDays, ShieldCheck, DollarSign, LogOut, Sun, Moon, Menu, X, Gauge
 } from 'lucide-react';
 
 // Pages - We will write these in separate files
@@ -18,6 +18,7 @@ import Reports from './pages/Reports.tsx';
 import CalendarPage from './pages/Calendar.tsx';
 import Staff from './pages/Staff.tsx';
 import Expenses from './pages/Expenses.tsx';
+import Cibil from './pages/Cibil.tsx';
 
 // ==========================================
 // API Helper Utilities
@@ -134,6 +135,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { name: 'Areas', path: '/areas', icon: MapPin, roles: ['super_admin', 'manager'] },
     { name: 'Kulus (Groups)', path: '/kulus', icon: Users, roles: ['super_admin', 'manager', 'officer'] },
     { name: 'Members Register', path: '/members', icon: ShieldCheck, roles: ['super_admin', 'manager', 'officer', 'viewer'] },
+    { name: 'CIBIL Score Check', path: '/cibil', icon: Gauge, roles: ['super_admin', 'manager', 'officer'] },
     { name: 'Loans & Schemes', path: '/loans', icon: Landmark, roles: ['super_admin', 'manager'] },
     { name: 'Collections Desk', path: '/collections', icon: Banknote, roles: ['super_admin', 'manager', 'officer'] },
     { name: 'Expenses Ledger', path: '/expenses', icon: DollarSign, roles: ['super_admin', 'manager'] },
@@ -338,6 +340,7 @@ export default function App() {
               <Route path="/areas" element={<ProtectedRoute allowedRoles={['super_admin', 'manager']}><Areas /></ProtectedRoute>} />
               <Route path="/kulus" element={<ProtectedRoute allowedRoles={['super_admin', 'manager', 'officer']}><Kulus /></ProtectedRoute>} />
               <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />
+              <Route path="/cibil" element={<ProtectedRoute allowedRoles={['super_admin', 'manager', 'officer']}><Cibil /></ProtectedRoute>} />
               <Route path="/loans" element={<ProtectedRoute allowedRoles={['super_admin', 'manager']}><Loans /></ProtectedRoute>} />
               <Route path="/collections" element={<ProtectedRoute allowedRoles={['super_admin', 'manager', 'officer']}><Collections /></ProtectedRoute>} />
               <Route path="/expenses" element={<ProtectedRoute allowedRoles={['super_admin', 'manager']}><Expenses /></ProtectedRoute>} />

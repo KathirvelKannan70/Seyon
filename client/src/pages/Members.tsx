@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
-  QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle
+  QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle,
+  Gauge, FileText, RefreshCw
 } from 'lucide-react';
 
 export default function Members() {
@@ -101,6 +102,26 @@ export default function Members() {
       setDetailsOpen(null);
     },
     onError: (err: any) => alert(err.message),
+  });
+
+  const [showCibilReport, setShowCibilReport] = useState<any>(null);
+
+  const cibilCheckMutation = useMutation({
+    mutationFn: (id: string) => fetchAPI(`/members/${id}/cibil-check`, 'POST', null, token),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      if (detailsOpen && detailsOpen._id === res.data.panOrAadhaar || (detailsOpen && detailsOpen.name === res.data.name)) {
+        // Find member in members list or just merge details
+        setDetailsOpen((prev: any) => ({
+          ...prev,
+          cibilScore: res.data.score,
+          cibilStatus: res.data.status,
+          cibilCheckedAt: res.data.checkedAt,
+          cibilReport: res.data
+        }));
+      }
+    },
+    onError: (err: any) => alert('CIBIL check failed: ' + err.message),
   });
 
   // File Upload Helper
@@ -415,6 +436,63 @@ export default function Members() {
               )}
             </div>
 
+            {/* CIBIL Score Section */}
+            <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold flex items-center gap-1.5 text-slate-700 dark:text-slate-350">
+                  <Gauge size={14} className="text-brand-500" />
+                  Credit Bureau Record (CIBIL)
+                </span>
+                {detailsOpen.cibilScore ? (
+                  <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md uppercase border ${
+                    detailsOpen.cibilScore >= 750 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                    detailsOpen.cibilScore >= 680 ? 'bg-lime-500/10 text-lime-500 border-lime-500/20' :
+                    detailsOpen.cibilScore >= 580 ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                    'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                  }`}>
+                    {detailsOpen.cibilStatus} ({detailsOpen.cibilScore})
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-900 rounded-md">
+                    Not Checked
+                  </span>
+                )}
+              </div>
+
+              {detailsOpen.cibilScore ? (
+                <div className="flex justify-between items-center text-[11px] text-slate-400">
+                  <span>Checked: {new Date(detailsOpen.cibilCheckedAt).toLocaleDateString()}</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowCibilReport(detailsOpen.cibilReport)}
+                      className="px-2.5 py-1 bg-brand-500/10 text-brand-500 font-bold rounded-lg hover:bg-brand-500/20 transition-all flex items-center gap-1"
+                    >
+                      <FileText size={11} /> View Report
+                    </button>
+                    <button
+                      onClick={() => cibilCheckMutation.mutate(detailsOpen._id)}
+                      disabled={cibilCheckMutation.isPending}
+                      className="px-2 py-1 bg-slate-150 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 rounded-lg transition-all"
+                      title="Re-check score"
+                    >
+                      <RefreshCw size={11} className={cibilCheckMutation.isPending ? 'animate-spin' : ''} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center text-[11px] text-slate-400">
+                  <span>No credit profile retrieved.</span>
+                  <button
+                    onClick={() => cibilCheckMutation.mutate(detailsOpen._id)}
+                    disabled={cibilCheckMutation.isPending}
+                    className="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl transition-all text-[10px]"
+                  >
+                    {cibilCheckMutation.isPending ? 'Checking...' : 'Check CIBIL Score'}
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* KYC Admin Actions */}
             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
               <span className="text-xs font-bold">Audit KYC verification:</span>
@@ -444,6 +522,109 @@ export default function Members() {
                 className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all"
               >
                 <Trash2 size={13} /> Delete Member
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed CIBIL Report Modal */}
+      {showCibilReport && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button onClick={() => setShowCibilReport(null)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
+              <Plus className="rotate-45" size={20} />
+            </button>
+
+            <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="p-2 bg-brand-500/10 text-brand-500 rounded-xl">
+                <Gauge size={18} />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-base font-bold">Credit Bureau Profile Summary</h3>
+                <span className="text-[10px] text-slate-400">TransUnion CIBIL credit history details</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              {/* Score visual */}
+              <div className="p-4 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center bg-slate-50 dark:bg-slate-950/40">
+                <span className="text-3xl font-black text-brand-500 tracking-tight">{showCibilReport.score}</span>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">CIBIL Score</span>
+                <span className={`mt-2.5 px-2 py-0.5 text-[9px] font-bold rounded-md uppercase border ${
+                  showCibilReport.score >= 750 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                  showCibilReport.score >= 680 ? 'bg-lime-500/10 text-lime-500 border-lime-500/20' :
+                  showCibilReport.score >= 580 ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                  'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                }`}>
+                  {showCibilReport.status}
+                </span>
+              </div>
+
+              {/* Stats */}
+              <div className="md:col-span-2 grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 rounded-xl flex flex-col">
+                  <span className="text-slate-400 font-semibold text-[9px] uppercase">Active Lines</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-350">{showCibilReport.activeAccounts} Accounts</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 rounded-xl flex flex-col">
+                  <span className="text-slate-400 font-semibold text-[9px] uppercase">Total Debt</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-350">INR {showCibilReport.totalOutstanding.toLocaleString()}</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 rounded-xl flex flex-col">
+                  <span className="text-slate-400 font-semibold text-[9px] uppercase">Punctuality</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-500">{showCibilReport.paymentHistory}% On-time</span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 rounded-xl flex flex-col">
+                  <span className="text-slate-400 font-semibold text-[9px] uppercase">Inquiries</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-350">{showCibilReport.inquiries} Searches</span>
+                </div>
+              </div>
+            </div>
+
+            {/* List of active loans */}
+            <div className="flex flex-col gap-2 mt-2">
+              <span className="text-xs font-bold">Credit Accounts History</span>
+              <div className="border border-slate-150 dark:border-slate-800 rounded-2xl overflow-hidden overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 font-semibold border-b border-slate-150 dark:border-slate-800">
+                      <th className="p-2.5">Lender</th>
+                      <th className="p-2.5">Type</th>
+                      <th className="p-2.5">Sanctioned</th>
+                      <th className="p-2.5">Outstanding</th>
+                      <th className="p-2.5">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {showCibilReport.accounts && showCibilReport.accounts.map((acc: any, i: number) => (
+                      <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/10">
+                        <td className="p-2.5 font-semibold">{acc.lender}</td>
+                        <td className="p-2.5 text-slate-500">{acc.type}</td>
+                        <td className="p-2.5">INR {acc.sanctionedAmount.toLocaleString()}</td>
+                        <td className="p-2.5">INR {acc.currentBalance.toLocaleString()}</td>
+                        <td className="p-2.5">
+                          <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-bold rounded-md uppercase ${
+                            acc.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500' :
+                            acc.status === 'Closed' ? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' :
+                            'bg-rose-500/10 text-rose-500'
+                          }`}>
+                            {acc.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => setShowCibilReport(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition-all"
+              >
+                Close Profile
               </button>
             </div>
           </div>

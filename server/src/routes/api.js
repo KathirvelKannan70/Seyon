@@ -78,6 +78,8 @@ router.get('/members', protect, memberCtrl.getMembers);
 router.get('/members/:id', protect, memberCtrl.getMemberById);
 router.put('/members/:id', protect, authorizeRoles('super_admin', 'manager', 'officer'), memberCtrl.updateMember);
 router.delete('/members/:id', protect, authorizeRoles('super_admin'), memberCtrl.deleteMember);
+router.post('/members/:id/cibil-check', protect, authorizeRoles('super_admin', 'manager', 'officer'), memberCtrl.checkMemberCibil);
+router.post('/cibil/check', protect, authorizeRoles('super_admin', 'manager', 'officer'), memberCtrl.checkGeneralCibil);
 router.post('/members/upload', protect, upload.single('file'), memberCtrl.uploadFile);
 router.post('/members/import', protect, authorizeRoles('super_admin', 'manager'), memberCtrl.bulkImportMembers);
 

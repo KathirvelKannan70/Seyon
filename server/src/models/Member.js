@@ -90,6 +90,22 @@ const memberSchema = new mongoose.Schema(
       enum: ['active', 'inactive'],
       default: 'active',
     },
+    cibilScore: {
+      type: Number,
+      default: null,
+    },
+    cibilStatus: {
+      type: String,
+      default: null,
+    },
+    cibilCheckedAt: {
+      type: Date,
+      default: null,
+    },
+    cibilReport: {
+      type: Object,
+      default: null,
+    },
   },
   {
     timestamps: true,
