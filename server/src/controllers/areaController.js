@@ -4,14 +4,19 @@ import AuditLog from '../models/AuditLog.js';
 
 export const createArea = async (req, res, next) => {
   try {
-    const { name, code, description, status, meetingNotes } = req.body;
+    let { name, code, description, status, meetingNotes } = req.body;
+
+    if (!code || !code.trim()) {
+      const cleanName = name.replace(/[^a-zA-Z]/g, '').toUpperCase();
+      code = (cleanName.length >= 3 ? cleanName.substring(0, 3) : 'AREA') + Math.floor(10 + Math.random() * 90);
+    }
 
     const areaExists = await Area.findOne({ code: code.toUpperCase() });
     if (areaExists) {
-      return res.status(400).json({ success: false, message: 'Area code must be unique' });
+      code = code.toUpperCase() + Math.floor(10 + Math.random() * 90);
     }
 
-    const area = await Area.create({ name, code, description, status, meetingNotes });
+    const area = await Area.create({ name, code: code.toUpperCase(), description, status, meetingNotes });
 
     await AuditLog.create({
       user: req.user.id,

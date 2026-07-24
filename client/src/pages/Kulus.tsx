@@ -30,6 +30,11 @@ export default function Kulus() {
   const [formError, setFormError] = useState<string | null>(null);
   const [inchargeId, setInchargeId] = useState('');
 
+  // Quick Inline Add Area States
+  const [showInlineAddArea, setShowInlineAddArea] = useState(false);
+  const [newAreaName, setNewAreaName] = useState('');
+  const [newAreaCode, setNewAreaCode] = useState('');
+
   const handleDateChange = (dateVal: string) => {
     setStartDate(dateVal);
     if (dateVal) {
@@ -95,6 +100,25 @@ export default function Kulus() {
     onError: (err: any) => alert(err.message),
   });
 
+  const createAreaMutation = useMutation({
+    mutationFn: (newArea: any) => fetchAPI('/areas', 'POST', newArea, token),
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ['areas'] });
+      if (res?.data?._id) {
+        setAreaId(res.data._id);
+      }
+      setShowInlineAddArea(false);
+      setNewAreaName('');
+      setNewAreaCode('');
+    },
+    onError: (err: any) => setFormError('Failed to create area: ' + err.message),
+  });
+
+  const handleCreateAreaInline = () => {
+    if (!newAreaName.trim()) return;
+    createAreaMutation.mutate({ name: newAreaName.trim(), code: newAreaCode.trim() });
+  };
+
   const openAddModal = () => {
     setEditingKulu(null);
     setName('');
@@ -108,6 +132,9 @@ export default function Kulus() {
     setInchargeId('');
     setSchemeType('15k');
     setFormError(null);
+    setShowInlineAddArea(false);
+    setNewAreaName('');
+    setNewAreaCode('');
     setModalOpen(true);
   };
 
@@ -385,10 +412,71 @@ export default function Kulus() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-400">Assign Area Division</label>
-                <select value={areaId} onChange={(e) => setAreaId(e.target.value)} className="form-input" required>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-semibold text-slate-400">Assign Area Division</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowInlineAddArea(!showInlineAddArea)}
+                    className="text-[11px] font-bold text-brand-500 hover:text-brand-600 flex items-center gap-1 transition-colors"
+                  >
+                    <Plus size={12} /> Add Area
+                  </button>
+                </div>
+
+                {showInlineAddArea && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-brand-500/30 rounded-2xl flex flex-col gap-2 animate-in fade-in duration-150 shadow-sm">
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">Create & Assign New Area Division:</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Area Name (e.g. South Madurai)"
+                        value={newAreaName}
+                        onChange={(e) => setNewAreaName(e.target.value)}
+                        className="form-input text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Area Code (Optional)"
+                        value={newAreaCode}
+                        onChange={(e) => setNewAreaCode(e.target.value)}
+                        className="form-input text-xs"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowInlineAddArea(false)}
+                        className="px-2.5 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={createAreaMutation.isPending || !newAreaName.trim()}
+                        onClick={handleCreateAreaInline}
+                        className="px-3 py-1 bg-brand-500 hover:bg-brand-600 text-white font-bold text-[11px] rounded-lg transition-all shadow-sm flex items-center gap-1"
+                      >
+                        {createAreaMutation.isPending ? 'Creating...' : '+ Save & Select Area'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <select
+                  value={areaId}
+                  onChange={(e) => {
+                    if (e.target.value === '__add_new__') {
+                      setShowInlineAddArea(true);
+                    } else {
+                      setAreaId(e.target.value);
+                    }
+                  }}
+                  className="form-input"
+                  required={!showInlineAddArea}
+                >
                   <option value="">Select Area...</option>
+                  <option value="__add_new__" className="font-bold text-brand-500">+ Add New Area...</option>
                   {areasData?.data?.map((a: any) => (
                     <option key={a._id} value={a._id}>{a.name} ({a.code})</option>
                   ))}
