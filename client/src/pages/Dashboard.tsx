@@ -49,11 +49,39 @@ export default function Dashboard() {
   const { summary, collectionGraph, recentActivity } = data.data;
 
   const statCards = [
-    { label: "Today's Collection", val: `₹${summary.todayCollection.toLocaleString()}`, change: `₹${summary.pendingCollection.toLocaleString()} Pending`, icon: Banknote, color: 'text-emerald-500 bg-emerald-500/10' },
-    { label: "Today's Due Target", val: `₹${summary.todayDue.toLocaleString()}`, change: `${summary.todayKulu} Kulu Meeting`, icon: Calendar, color: 'text-amber-500 bg-amber-500/10' },
-    { label: 'Outstanding Portfolio', val: `₹${summary.outstandingLoans.toLocaleString()}`, change: `${summary.activeMembers} Active Borrowers`, icon: TrendingUp, color: 'text-brand-500 bg-brand-500/10' },
-    { label: 'Operational Profit/Loss', val: `₹${summary.netProfit.toLocaleString()}`, change: `₹${summary.totalExpenses.toLocaleString()} Expenses Logged`, icon: DollarSign, color: 'text-cyan-500 bg-cyan-500/10' },
+    {
+      label: "Today's Collection",
+      val: `₹${summary.todayCollection.toLocaleString()}`,
+      change: `₹${summary.pendingCollection.toLocaleString()} Pending Today`,
+      icon: Banknote,
+      color: 'text-emerald-500 bg-emerald-500/10',
+    },
+    {
+      label: "Today's Due Target",
+      val: `₹${summary.todayDue.toLocaleString()}`,
+      change: `${summary.todayKulu} Kulu Meeting Today`,
+      icon: Calendar,
+      color: 'text-amber-500 bg-amber-500/10',
+    },
+    {
+      label: "This Week's Collection (Mon–Sat)",
+      val: `₹${(summary.weeklyCollection || 0).toLocaleString()}`,
+      change: `₹${(summary.weeklyPending || 0).toLocaleString()} Pending This Week`,
+      icon: TrendingUp,
+      color: 'text-cyan-500 bg-cyan-500/10',
+    },
+    {
+      label: 'Outstanding Portfolio',
+      val: `₹${summary.outstandingLoans.toLocaleString()}`,
+      change: `${summary.activeMembers} Active Borrowers`,
+      icon: DollarSign,
+      color: 'text-brand-500 bg-brand-500/10',
+    },
   ];
+
+  const weeklyProgressPercent = summary.weeklyDue > 0
+    ? Math.min(100, Math.round((summary.weeklyCollection / summary.weeklyDue) * 100))
+    : 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -99,14 +127,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Collection Graph */}
         <div className="lg:col-span-2 p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-premium dark:shadow-premium-dark">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">Weekly Collection Trend</span>
-              <span className="text-[11px] text-slate-400">Total payments collected over the last 7 weekdays.</span>
+              <span className="text-sm font-semibold">Weekly Collection Trend (Mon – Sat)</span>
+              <span className="text-[11px] text-slate-400">Total payments collected vs target dues for the current working week.</span>
             </div>
-            <span className="px-2.5 py-1 text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 rounded-lg">
-              Live Feed
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 text-[10px] font-bold bg-cyan-500/10 text-cyan-500 rounded-lg">
+                Collected: ₹{(summary.weeklyCollection || 0).toLocaleString()}
+              </span>
+              <span className="px-2.5 py-1 text-[10px] font-bold bg-amber-500/10 text-amber-500 rounded-lg">
+                Pending: ₹{(summary.weeklyPending || 0).toLocaleString()}
+              </span>
+            </div>
           </div>
 
           <div className="h-64 mt-2">
@@ -114,14 +147,19 @@ export default function Dashboard() {
               <AreaChart data={collectionGraph}>
                 <defs>
                   <linearGradient id="colGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2}/>
+                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="targetGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#33415510" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
                 <YAxis stroke="#64748b" fontSize={10} tickLine={false} />
                 <Tooltip
+                  formatter={(value: any, name: string) => [`₹${Number(value).toLocaleString()}`, name]}
                   contentStyle={{
                     background: 'rgba(15, 23, 42, 0.9)',
                     border: '1px solid rgba(255,255,255,0.05)',
@@ -130,7 +168,8 @@ export default function Dashboard() {
                     color: '#fff',
                   }}
                 />
-                <Area type="monotone" dataKey="Collected" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colGrad)" />
+                <Area type="monotone" dataKey="Target" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="4 4" fillOpacity={1} fill="url(#targetGrad)" />
+                <Area type="monotone" dataKey="Collected" stroke="#0ea5e9" strokeWidth={2.5} fillOpacity={1} fill="url(#colGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -173,9 +212,21 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 flex justify-between items-center text-xs mt-4">
-            <span className="text-slate-400 font-medium">Month Collection Tally:</span>
-            <span className="font-bold text-emerald-500">₹{summary.monthlyCollection.toLocaleString()}</span>
+          <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400 font-medium">Mon–Sat Target Efficiency:</span>
+              <span className="font-bold text-cyan-500">{weeklyProgressPercent}%</span>
+            </div>
+            <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 to-brand-500 transition-all duration-500"
+                style={{ width: `${weeklyProgressPercent}%` }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-xs mt-2 p-2 bg-slate-50 dark:bg-slate-950 rounded-xl">
+              <span className="text-slate-400 font-medium">Month Collection Tally:</span>
+              <span className="font-bold text-emerald-500">₹{summary.monthlyCollection.toLocaleString()}</span>
+            </div>
           </div>
         </div>
       </div>

@@ -17,7 +17,7 @@ export const getDashboardStats = async (req, res, next) => {
     endOfToday.setHours(23, 59, 59, 999);
 
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const currentDay = days[new Date().getDay()];
+    const currentDayName = days[today.getDay()];
 
     // Counts
     const totalMembers = await Member.countDocuments();
@@ -25,22 +25,27 @@ export const getDashboardStats = async (req, res, next) => {
     const activeMembers = await Loan.distinct('member', { status: 'active' }).then(res => res.length);
 
     // Todays Kulus and Areas
-    const todayKulusCount = await Kulu.countDocuments({ meetingDay: currentDay, status: 'active' });
-    const todayKuluList = await Kulu.find({ meetingDay: currentDay, status: 'active' });
+    const todayKulusCount = await Kulu.countDocuments({ meetingDay: currentDayName, status: 'active' });
+    const todayKuluList = await Kulu.find({ meetingDay: currentDayName, status: 'active' });
     const todayAreasCount = await Area.countDocuments({
       _id: { $in: todayKuluList.map(k => k.area) }
     });
 
     // Today's Dues and Collections
-    const todaySchedules = await WeeklyCollection.find({
-      dueDate: { $gte: today, $lte: endOfToday }
-    });
-    const todayDueAmount = todaySchedules.reduce((acc, s) => acc + s.dueAmount, 0);
-
     const todayCollections = await Payment.find({
       paymentDate: { $gte: today, $lte: endOfToday }
     });
     const todayCollectedAmount = todayCollections.reduce((acc, p) => acc + p.amountPaid, 0);
+
+    const todaySchedules = await WeeklyCollection.find({
+      dueDate: { $gte: today, $lte: endOfToday }
+    });
+    let todayDueAmount = todaySchedules.reduce((acc, s) => acc + s.dueAmount, 0);
+    const todayKuluExpected = todayKuluList.reduce((acc, k) => acc + (k.weeklyRepayment || 0), 0);
+
+    if (todayDueAmount === 0 && todayKuluExpected > 0) {
+      todayDueAmount = todayKuluExpected;
+    }
     const pendingCollection = Math.max(0, todayDueAmount - todayCollectedAmount);
 
     // Aggregates
@@ -50,42 +55,70 @@ export const getDashboardStats = async (req, res, next) => {
     const activeLoans = await Loan.find({ status: { $in: ['active', 'defaulted'] } });
     const outstandingLoans = activeLoans.reduce((acc, l) => acc + l.remainingAmount, 0);
 
-    // Monthly & Weekly Collections
+    // Monthly Collections
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
-
     const monthlyPayments = await Payment.find({ paymentDate: { $gte: startOfMonth } });
     const monthlyCollected = monthlyPayments.reduce((acc, p) => acc + p.amountPaid, 0);
 
-    const weeklyPayments = await Payment.find({ paymentDate: { $gte: startOfWeek } });
-    const weeklyCollected = weeklyPayments.reduce((acc, p) => acc + p.amountPaid, 0);
+    // Microfinance Working Week Calculation (Monday to Saturday)
+    const dayOfWeek = today.getDay(); // 0: Sun, 1: Mon, ..., 6: Sat
+    const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const mondayDate = new Date(today);
+    mondayDate.setDate(today.getDate() + diffToMon);
+    mondayDate.setHours(0, 0, 0, 0);
+
+    const weekDaysShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekDaysFull = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    const collectionGraph = [];
+    let weeklyCollected = 0;
+    let weeklyDue = 0;
+
+    for (let i = 0; i < 6; i++) {
+      const dayStart = new Date(mondayDate);
+      dayStart.setDate(mondayDate.getDate() + i);
+      dayStart.setHours(0, 0, 0, 0);
+
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      // Payments on this weekday
+      const dayPayments = await Payment.find({ paymentDate: { $gte: dayStart, $lte: dayEnd } });
+      const dayCollected = dayPayments.reduce((acc, p) => acc + p.amountPaid, 0);
+
+      // WeeklyCollection dues on this weekday
+      const daySchedules = await WeeklyCollection.find({ dueDate: { $gte: dayStart, $lte: dayEnd } });
+      let dayDue = daySchedules.reduce((acc, s) => acc + s.dueAmount, 0);
+
+      // Fallback to active Kulu expected repayment if no schedules generated yet
+      const dayKulus = await Kulu.find({ meetingDay: weekDaysFull[i], status: 'active' });
+      const dayKuluTarget = dayKulus.reduce((acc, k) => acc + (k.weeklyRepayment || 0), 0);
+      if (dayDue === 0 && dayKuluTarget > 0) {
+        dayDue = dayKuluTarget;
+      }
+
+      const dayPending = Math.max(0, dayDue - dayCollected);
+
+      weeklyCollected += dayCollected;
+      weeklyDue += dayDue;
+
+      collectionGraph.push({
+        name: weekDaysShort[i],
+        fullName: weekDaysFull[i],
+        Collected: dayCollected,
+        Target: dayDue,
+        Pending: dayPending,
+      });
+    }
+
+    const weeklyPending = Math.max(0, weeklyDue - weeklyCollected);
 
     // Expenses vs Income (P&L Ledger)
     const expenses = await Expense.find();
     const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
-    const incomes = await Income.find();
-    const totalIncomes = incomes.reduce((acc, i) => acc + i.amount, 0);
-    const netProfit = totalCollected - totalExpenses; // returns on capital minus operational expenses
-
-    // Collection trend (last 7 days)
-    const trendDays = [];
-    const trendCollections = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const dEnd = new Date(d);
-      dEnd.setHours(23, 59, 59, 999);
-
-      const daysPayments = await Payment.find({ paymentDate: { $gte: d, $lte: dEnd } });
-      const dailySum = daysPayments.reduce((acc, p) => acc + p.amountPaid, 0);
-      
-      trendDays.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
-      trendCollections.push(dailySum);
-    }
+    const netProfit = totalCollected - totalExpenses;
 
     // Top Performing Area
-    // Calculate total collection per area
     const areaPayments = await Payment.find().populate({
       path: 'member',
       populate: { path: 'kulu', populate: { path: 'area' } }
@@ -126,6 +159,8 @@ export const getDashboardStats = async (req, res, next) => {
           totalCollected,
           monthlyCollection: monthlyCollected,
           weeklyCollection: weeklyCollected,
+          weeklyDue,
+          weeklyPending,
           outstandingLoans,
           activeMembers,
           totalMembers,
@@ -134,10 +169,7 @@ export const getDashboardStats = async (req, res, next) => {
           totalExpenses,
           topPerformingArea: `${topPerformingArea} (${maxAreaCollection.toFixed(0)} Collected)`,
         },
-        collectionGraph: trendDays.map((day, idx) => ({
-          name: day,
-          Collected: trendCollections[idx],
-        })),
+        collectionGraph,
         recentActivity,
       },
     });
