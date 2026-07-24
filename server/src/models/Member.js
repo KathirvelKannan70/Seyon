@@ -42,16 +42,34 @@ const memberSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: [true, 'Phone number is required'],
+      validate: {
+        validator: function (v) {
+          return /^\d{10}$/.test(v);
+        },
+        message: (props) => `${props.value} is not a valid 10-digit phone number`,
+      },
       trim: true,
     },
     alternatePhone: {
       type: String,
+      validate: {
+        validator: function (v) {
+          return !v || /^\d{10}$/.test(v);
+        },
+        message: (props) => `${props.value} is not a valid 10-digit alternate phone number`,
+      },
       trim: true,
     },
     aadhaarNumber: {
       type: String,
       required: [true, 'Aadhaar number is required'],
       unique: true,
+      validate: {
+        validator: function (v) {
+          return /^\d{12}$/.test(v);
+        },
+        message: (props) => `${props.value} is not a valid 12-digit Aadhaar number`,
+      },
       trim: true,
     },
     pan: {
@@ -76,7 +94,16 @@ const memberSchema = new mongoose.Schema(
     },
     nominee: {
       name: { type: String, required: true },
-      phone: { type: String, required: true },
+      phone: {
+        type: String,
+        required: true,
+        validate: {
+          validator: function (v) {
+            return /^\d{10}$/.test(v);
+          },
+          message: (props) => `${props.value} is not a valid 10-digit nominee phone number`,
+        },
+      },
       relation: { type: String, required: true },
     },
     kycStatus: {

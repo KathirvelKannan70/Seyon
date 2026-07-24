@@ -246,6 +246,28 @@ export default function Members() {
     e.preventDefault();
     setFormError(null);
 
+    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanAltPhone = alternatePhone.replace(/\D/g, '');
+    const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
+    const cleanNomineePhone = nomineePhone.replace(/\D/g, '');
+
+    if (cleanPhone.length !== 10) {
+      setFormError('Primary phone number must be exactly 10 digits.');
+      return;
+    }
+    if (cleanAltPhone && cleanAltPhone.length !== 10) {
+      setFormError('Alternate phone number must be exactly 10 digits.');
+      return;
+    }
+    if (cleanAadhaar.length !== 12) {
+      setFormError('Aadhaar number must be exactly 12 digits.');
+      return;
+    }
+    if (cleanNomineePhone.length !== 10) {
+      setFormError('Nominee phone number must be exactly 10 digits.');
+      return;
+    }
+
     const payload = {
       kulu: kuluId,
       photo: photoUrl,
@@ -255,9 +277,9 @@ export default function Members() {
       gender,
       dob: new Date(dob),
       age: Number(age),
-      phone,
-      alternatePhone,
-      aadhaarNumber,
+      phone: cleanPhone,
+      alternatePhone: cleanAltPhone,
+      aadhaarNumber: cleanAadhaar,
       pan,
       address: {
         street,
@@ -270,7 +292,7 @@ export default function Members() {
       monthlyIncome: Number(monthlyIncome),
       nominee: {
         name: nomineeName,
-        phone: nomineePhone,
+        phone: cleanNomineePhone,
         relation: nomineeRelation,
       },
       kycStatus,
@@ -832,19 +854,42 @@ export default function Members() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Primary Phone</label>
-                  <input type="tel" required placeholder="e.g. 9876543210" value={phone} onChange={(e) => setPhone(e.target.value)} className="form-input" />
+                  <label className="font-semibold text-slate-400">Primary Phone (10 digits)</label>
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    placeholder="e.g. 9876543210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="form-input"
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Alternate Phone</label>
-                  <input type="tel" placeholder="e.g. 9876543211" value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value)} className="form-input" />
+                  <label className="font-semibold text-slate-400">Alternate Phone (10 digits)</label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="e.g. 9876543211"
+                    value={alternatePhone}
+                    onChange={(e) => setAlternatePhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="form-input"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Aadhaar (12 digits)</label>
-                  <input type="text" required placeholder="e.g. 443322110022" value={aadhaarNumber} onChange={(e) => setAadhaarNumber(e.target.value)} className="form-input" />
+                  <input
+                    type="text"
+                    required
+                    maxLength={12}
+                    placeholder="e.g. 443322110022"
+                    value={aadhaarNumber}
+                    onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                    className="form-input"
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">PAN Card</label>
@@ -927,8 +972,16 @@ export default function Members() {
                   <input type="text" required placeholder="Spouse / Son" value={nomineeRelation} onChange={(e) => setNomineeRelation(e.target.value)} className="form-input" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Phone</label>
-                  <input type="tel" required placeholder="Phone" value={nomineePhone} onChange={(e) => setNomineePhone(e.target.value)} className="form-input" />
+                  <label className="font-semibold text-slate-400">Phone (10 digits)</label>
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    placeholder="10-digit Phone"
+                    value={nomineePhone}
+                    onChange={(e) => setNomineePhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="form-input"
+                  />
                 </div>
               </div>
 

@@ -86,7 +86,33 @@ export const getMemberById = async (req, res, next) => {
     }
 
     // Include loan history
-    const loans = await Loan.find({ member: member._id }).populate('scheme');
+    let loans = await Loan.find({ member: member._id }).populate('scheme');
+
+    // Auto-include active Kulu scheme loan if formal Loan document does not exist yet
+    if (loans.length === 0 && member.kulu) {
+      const schemeMap = {
+        '10k': { name: '10K Scheme', amount: 10000, emi: 800 },
+        '15k': { name: '15K Scheme', amount: 15000, emi: 930 },
+        '20k': { name: '20K Scheme', amount: 20000, emi: 1100 },
+      };
+      const schemeTypeKey = (member.kulu.schemeType || '15k').toLowerCase();
+      const schemeInfo = schemeMap[schemeTypeKey] || schemeMap['15k'];
+
+      loans = [
+        {
+          _id: 'kulu-active-' + member._id,
+          loanNumber: `LN-${member.kulu.kuluNumber || 'ACTIVE'}`,
+          scheme: { name: `${schemeInfo.name} (${member.kulu.name})` },
+          loanAmount: schemeInfo.amount,
+          weeklyEMI: schemeInfo.emi,
+          outstandingAmount: schemeInfo.amount,
+          paidAmount: 0,
+          remainingAmount: schemeInfo.amount,
+          status: 'active',
+          startDate: member.kulu.startDate || member.createdAt,
+        }
+      ];
+    }
 
     res.status(200).json({
       success: true,
