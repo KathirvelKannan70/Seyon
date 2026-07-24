@@ -13,7 +13,11 @@ export const createMember = async (req, res, next) => {
 
     const memberExists = await Member.findOne({ aadhaarNumber: memberData.aadhaarNumber });
     if (memberExists) {
-      return res.status(400).json({ success: false, message: 'Member with this Aadhaar already exists' });
+      return res.status(400).json({
+        success: false,
+        message: `Member with Aadhaar number (${memberData.aadhaarNumber}) already exists in the database (${memberExists.name}).`,
+        isDuplicateAadhaar: true,
+      });
     }
 
     // Verify Kulu exists
@@ -24,7 +28,7 @@ export const createMember = async (req, res, next) => {
 
     // If address.areaName is missing, fill it from Kulu area name
     if (!memberData.address) memberData.address = {};
-    memberData.address.areaName = kulu.area.name;
+    memberData.address.areaName = kulu.area?.name || 'Main Area';
 
     const member = await Member.create(memberData);
 
@@ -36,7 +40,14 @@ export const createMember = async (req, res, next) => {
     });
 
     res.status(201).json({ success: true, data: member });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Member with this Aadhaar number already exists in the database.',
+        isDuplicateAadhaar: true,
+      });
+    }
     next(error);
   }
 };

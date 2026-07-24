@@ -242,6 +242,24 @@ export default function Members() {
     setModalOpen(false);
   };
 
+  const handleDobChange = (dateVal: string) => {
+    setDob(dateVal);
+    if (dateVal) {
+      const birthDate = new Date(dateVal);
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        calculatedAge--;
+      }
+      setAge(calculatedAge > 0 ? calculatedAge : 0);
+    }
+  };
+
+  const duplicateAadhaarMember = aadhaarNumber.length === 12
+    ? membersData?.data?.find((m: any) => m.aadhaarNumber === aadhaarNumber.replace(/\D/g, ''))
+    : null;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -261,6 +279,10 @@ export default function Members() {
     }
     if (cleanAadhaar.length !== 12) {
       setFormError('Aadhaar number must be exactly 12 digits.');
+      return;
+    }
+    if (duplicateAadhaarMember) {
+      setFormError(`Member with this Aadhaar number already exists: ${duplicateAadhaarMember.name} (Phone: ${duplicateAadhaarMember.phone}).`);
       return;
     }
     if (cleanNomineePhone.length !== 10) {
@@ -844,11 +866,17 @@ export default function Members() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Date of Birth</label>
-                  <input type="date" required value={dob} onChange={(e) => setDob(e.target.value)} className="form-input" />
+                  <input type="date" required value={dob} onChange={(e) => handleDobChange(e.target.value)} className="form-input" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Age</label>
-                  <input type="number" required value={age} onChange={(e) => setAge(Number(e.target.value))} className="form-input" />
+                  <label className="font-semibold text-slate-400">Age (Auto-calculated)</label>
+                  <input
+                    type="number"
+                    required
+                    value={age}
+                    onChange={(e) => setAge(Number(e.target.value))}
+                    className="form-input font-bold text-brand-600 dark:text-brand-400"
+                  />
                 </div>
               </div>
 
@@ -888,8 +916,13 @@ export default function Members() {
                     placeholder="e.g. 443322110022"
                     value={aadhaarNumber}
                     onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                    className="form-input"
+                    className={`form-input ${duplicateAadhaarMember ? 'border-rose-500 bg-rose-500/10 text-rose-500 font-bold' : ''}`}
                   />
+                  {duplicateAadhaarMember && (
+                    <span className="text-[10px] text-rose-500 font-bold flex items-center gap-1 mt-0.5">
+                      <AlertTriangle size={11} /> Member with this Aadhaar already exists! ({duplicateAadhaarMember.name} • {duplicateAadhaarMember.phone})
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">PAN Card</label>
