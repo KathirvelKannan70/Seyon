@@ -1,6 +1,8 @@
 import Member from '../models/Member.js';
 import Kulu from '../models/Kulu.js';
 import Loan from '../models/Loan.js';
+import WeeklyCollection from '../models/WeeklyCollection.js';
+import Payment from '../models/Payment.js';
 import AuditLog from '../models/AuditLog.js';
 import cloudinary from '../config/cloudinary.js';
 import fs from 'fs';
@@ -121,28 +123,52 @@ export const updateMember = async (req, res, next) => {
 
 export const deleteMember = async (req, res, next) => {
   try {
-    // Check if member has active loans
-    const activeLoans = await Loan.countDocuments({
-      member: req.params.id,
-      status: { $in: ['active', 'defaulted'] },
-    });
+    const memberId = req.params.id;
+    const force = req.query.force === 'true';
 
-    if (activeLoans > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete member with active or defaulted loans.',
-      });
-    }
-
-    const member = await Member.findByIdAndDelete(req.params.id);
+    const member = await Member.findById(memberId);
     if (!member) {
       return res.status(404).json({ success: false, message: 'Member not found' });
     }
 
+    // Check if member has active or defaulted loans
+    const activeLoans = await Loan.find({
+      member: memberId,
+      status: { $in: ['active', 'defaulted'] },
+    }).populate('scheme', 'name');
+
+    if (activeLoans.length > 0 && !force) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete member with active or defaulted loans.',
+        hasActiveLoans: true,
+        activeLoansCount: activeLoans.length,
+        activeLoans: activeLoans.map((loan) => ({
+          id: loan._id,
+          loanNumber: loan.loanNumber,
+          schemeName: loan.scheme?.name || 'N/A',
+          status: loan.status,
+          remainingAmount: loan.remainingAmount,
+        })),
+      });
+    }
+
+    // Delete associated loans, weekly collections, and payments
+    const allLoans = await Loan.find({ member: memberId });
+    const loanIds = allLoans.map((l) => l._id);
+
+    if (loanIds.length > 0) {
+      await WeeklyCollection.deleteMany({ $or: [{ member: memberId }, { loan: { $in: loanIds } }] });
+      await Payment.deleteMany({ $or: [{ member: memberId }, { loan: { $in: loanIds } }] });
+      await Loan.deleteMany({ member: memberId });
+    }
+
+    await Member.findByIdAndDelete(memberId);
+
     await AuditLog.create({
       user: req.user.id,
       action: 'DELETE_MEMBER',
-      details: `Deleted member ${member.name}`,
+      details: `Deleted member ${member.name}${force ? ' (Force cascade delete)' : ''}`,
       ipAddress: req.ip,
     });
 

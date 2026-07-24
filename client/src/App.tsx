@@ -81,7 +81,9 @@ export const fetchAPI = async (endpoint: string, method = 'GET', body: any = nul
   }
 
   if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong');
+    const error: any = new Error(data.message || 'Something went wrong');
+    Object.assign(error, data);
+    throw error;
   }
   return data;
 };

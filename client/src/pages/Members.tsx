@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
   QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle,
-  Gauge, FileText, RefreshCw
+  Gauge, FileText, RefreshCw, ExternalLink
 } from 'lucide-react';
 
 export default function Members() {
+  const navigate = useNavigate();
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
@@ -20,6 +22,11 @@ export default function Members() {
   const [detailsOpen, setDetailsOpen] = useState<any>(null);
   const [qrCodeOpen, setQrCodeOpen] = useState<any>(null);
   const [importOpen, setImportOpen] = useState(false);
+
+  // Deletion States
+  const [deleteConfirmMember, setDeleteConfirmMember] = useState<any>(null);
+  const [deleteBlockedData, setDeleteBlockedData] = useState<any>(null);
+  const [forceDeleteChecked, setForceDeleteChecked] = useState(false);
 
   // Form States
   const [name, setName] = useState('');
@@ -97,12 +104,22 @@ export default function Members() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => fetchAPI(`/members/${id}`, 'DELETE', null, token),
+    mutationFn: ({ id, force }: { id: string; force?: boolean }) =>
+      fetchAPI(`/members/${id}${force ? '?force=true' : ''}`, 'DELETE', null, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['members'] });
+      setDeleteConfirmMember(null);
+      setDeleteBlockedData(null);
+      setForceDeleteChecked(false);
       setDetailsOpen(null);
     },
-    onError: (err: any) => alert(err.message),
+    onError: (err: any) => {
+      if (err.hasActiveLoans || err.activeLoansCount) {
+        setDeleteBlockedData(err);
+      } else {
+        alert(err.message || 'Failed to delete member');
+      }
+    },
   });
 
   const [showCibilReport, setShowCibilReport] = useState<any>(null);
@@ -543,9 +560,9 @@ export default function Members() {
             <div className="flex gap-2 justify-end mt-2">
               <button
                 onClick={() => {
-                  if (confirm('Delete this member? All ledger logs will be wiped.')) {
-                    deleteMutation.mutate(detailsOpen._id);
-                  }
+                  setDeleteBlockedData(null);
+                  setForceDeleteChecked(false);
+                  setDeleteConfirmMember(detailsOpen);
                 }}
                 className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all"
               >
@@ -907,6 +924,175 @@ export default function Members() {
                 Register Member Accounts
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Deletion Workflow Modal */}
+      {deleteConfirmMember && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 relative">
+            {/* Header */}
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-rose-500/10 text-rose-500 rounded-2xl shrink-0">
+                <ShieldAlert size={28} />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Delete Member Account</h3>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Action regarding member <span className="font-semibold text-slate-800 dark:text-slate-200">{deleteConfirmMember.name}</span>
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setDeleteConfirmMember(null);
+                  setDeleteBlockedData(null);
+                  setForceDeleteChecked(false);
+                }}
+                className="ml-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <Plus className="rotate-45" size={22} />
+              </button>
+            </div>
+
+            {/* Member Info Summary Card */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl flex items-center justify-between text-xs">
+              <div className="flex flex-col gap-0.5">
+                <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{deleteConfirmMember.name}</span>
+                <span className="text-slate-500">Aadhaar: {deleteConfirmMember.aadhaarNumber || 'N/A'} • Phone: {deleteConfirmMember.phone}</span>
+                <span className="text-slate-400 text-[10px]">Group: {deleteConfirmMember.kulu?.name || 'Unassigned'}</span>
+              </div>
+              <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border ${
+                deleteConfirmMember.kycStatus === 'verified'
+                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                  : deleteConfirmMember.kycStatus === 'rejected'
+                  ? 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                  : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+              }`}>
+                KYC {deleteConfirmMember.kycStatus?.toUpperCase() || 'PENDING'}
+              </span>
+            </div>
+
+            {/* Active Loans Warning Box if deletion blocked */}
+            {deleteBlockedData ? (
+              <div className="flex flex-col gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-900 dark:text-amber-200">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+                  <div className="flex flex-col text-xs gap-1">
+                    <span className="font-bold text-amber-700 dark:text-amber-400 text-sm">Deletion Blocked: Active Loans Found</span>
+                    <p className="text-slate-600 dark:text-slate-300">
+                      This member has <strong>{deleteBlockedData.activeLoansCount || deleteBlockedData.activeLoans?.length || 'active'}</strong> active/defaulted loan(s) linked to their account. Standard deletion is prevented to protect financial integrity.
+                    </p>
+                  </div>
+                </div>
+
+                {deleteBlockedData.activeLoans && deleteBlockedData.activeLoans.length > 0 && (
+                  <div className="mt-1 flex flex-col gap-1.5 max-h-36 overflow-y-auto">
+                    {deleteBlockedData.activeLoans.map((loan: any) => (
+                      <div key={loan.id} className="p-2.5 bg-white/70 dark:bg-slate-900/70 border border-amber-200 dark:border-amber-900/50 rounded-xl text-[11px] flex justify-between items-center text-slate-800 dark:text-slate-200 shadow-sm">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-brand-600 dark:text-brand-400">{loan.loanNumber}</span>
+                          <span className="text-[10px] text-slate-400">{loan.schemeName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-500 font-semibold uppercase text-[9px]">{loan.status}</span>
+                          <span className="font-bold">₹{loan.remainingAmount?.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Resolution Options */}
+                <div className="mt-2 pt-3 border-t border-amber-500/20 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Recommended action:</span>
+                    <button
+                      onClick={() => {
+                        setDeleteConfirmMember(null);
+                        navigate('/loans');
+                      }}
+                      className="px-3 py-1.5 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 text-white dark:text-slate-900 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-sm"
+                    >
+                      <ExternalLink size={12} /> Go to Loans Page
+                    </button>
+                  </div>
+
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex flex-col gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={forceDeleteChecked}
+                        onChange={(e) => setForceDeleteChecked(e.target.checked)}
+                        className="rounded border-rose-400 text-rose-600 focus:ring-rose-500"
+                      />
+                      <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                        Force Cascade Delete (Admin Override)
+                      </span>
+                    </label>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed pl-6">
+                      Permanently wipes this member along with <strong>ALL</strong> associated active loans, collection logs, and payment records.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800 rounded-2xl text-xs text-slate-600 dark:text-slate-400 flex flex-col gap-2">
+                <p>Are you sure you want to delete <strong>{deleteConfirmMember.name}</strong>?</p>
+                <p className="text-rose-500 text-[11px] font-semibold">⚠️ All ledger records and history associated with this member will be permanently removed.</p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => {
+                  setDeleteConfirmMember(null);
+                  setDeleteBlockedData(null);
+                  setForceDeleteChecked(false);
+                }}
+                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+
+              {deleteBlockedData ? (
+                <button
+                  disabled={!forceDeleteChecked || deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate({ id: deleteConfirmMember._id, force: true })}
+                  className={`px-5 py-2.5 font-bold text-xs rounded-xl flex items-center gap-2 transition-all ${
+                    forceDeleteChecked && !deleteMutation.isPending
+                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/30'
+                      : 'bg-slate-300 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                  }`}
+                >
+                  {deleteMutation.isPending ? (
+                    <>
+                      <RefreshCw className="animate-spin" size={14} /> Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} /> Force Delete Member
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  disabled={deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate({ id: deleteConfirmMember._id })}
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-rose-600/30"
+                >
+                  {deleteMutation.isPending ? (
+                    <>
+                      <RefreshCw className="animate-spin" size={14} /> Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} /> Confirm Delete
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
