@@ -84,6 +84,11 @@ const memberSchema = new mongoose.Schema(
       enum: ['pending', 'verified', 'rejected'],
       default: 'pending',
     },
+    feedbackRating: {
+      type: String,
+      enum: ['Best', 'Good', 'Average', 'Poor', 'Worst'],
+      default: 'Good',
+    },
     gpsLocation: {
       latitude: { type: Number },
       longitude: { type: Number },

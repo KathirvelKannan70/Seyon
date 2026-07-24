@@ -75,7 +75,10 @@ export const getMemberById = async (req, res, next) => {
     const member = await Member.findById(req.params.id)
       .populate({
         path: 'kulu',
-        populate: { path: 'area' },
+        populate: [
+          { path: 'area' },
+          { path: 'fieldOfficer', select: 'name email phone' }
+        ],
       });
 
     if (!member) {

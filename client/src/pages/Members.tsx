@@ -5,7 +5,7 @@ import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
   QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle,
-  Gauge, FileText, RefreshCw, ExternalLink
+  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 
 export default function Members() {
@@ -23,10 +23,11 @@ export default function Members() {
   const [qrCodeOpen, setQrCodeOpen] = useState<any>(null);
   const [importOpen, setImportOpen] = useState(false);
 
-  // Deletion States
+  // Deletion & Profile States
   const [deleteConfirmMember, setDeleteConfirmMember] = useState<any>(null);
   const [deleteBlockedData, setDeleteBlockedData] = useState<any>(null);
   const [forceDeleteChecked, setForceDeleteChecked] = useState(false);
+  const [fullProfileMemberId, setFullProfileMemberId] = useState<string | null>(null);
 
   // Form States
   const [name, setName] = useState('');
@@ -112,6 +113,7 @@ export default function Members() {
       setDeleteBlockedData(null);
       setForceDeleteChecked(false);
       setDetailsOpen(null);
+      setFullProfileMemberId(null);
     },
     onError: (err: any) => {
       if (err.hasActiveLoans || err.activeLoansCount) {
@@ -119,6 +121,21 @@ export default function Members() {
       } else {
         alert(err.message || 'Failed to delete member');
       }
+    },
+  });
+
+  const { data: memberFullDetails, isLoading: fullDetailsLoading } = useQuery({
+    queryKey: ['memberDetails', fullProfileMemberId],
+    queryFn: () => fetchAPI(`/members/${fullProfileMemberId}`, 'GET', null, token),
+    enabled: !!fullProfileMemberId,
+  });
+
+  const updateFeedbackMutation = useMutation({
+    mutationFn: ({ id, rating }: { id: string; rating: string }) =>
+      fetchAPI(`/members/${id}`, 'PUT', { feedbackRating: rating }, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['memberDetails', fullProfileMemberId] });
     },
   });
 
@@ -379,8 +396,8 @@ export default function Members() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-800/40 pt-4 mt-4">
-                <div className="flex items-center gap-1.5">
+              <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-800/40 pt-4 mt-4 gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {member.kycStatus === 'verified' ? (
                     <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                       <ShieldCheck size={10} /> KYC VERIFIED
@@ -394,9 +411,20 @@ export default function Members() {
                       PENDING KYC
                     </span>
                   )}
+
+                  {/* Feedback Rating Badge */}
+                  <span className={`flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-md ${
+                    member.feedbackRating === 'Best' ? 'bg-emerald-500/10 text-emerald-500' :
+                    member.feedbackRating === 'Worst' ? 'bg-rose-500/10 text-rose-500' :
+                    member.feedbackRating === 'Poor' ? 'bg-orange-500/10 text-orange-500' :
+                    member.feedbackRating === 'Average' ? 'bg-amber-500/10 text-amber-500' :
+                    'bg-cyan-500/10 text-cyan-500'
+                  }`}>
+                    <Star size={9} className="fill-current" /> {member.feedbackRating || 'Good'}
+                  </span>
                 </div>
 
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5 items-center">
                   <button
                     onClick={() => {
                       const qrValue = `Name:${member.name},Aadhaar:${member.aadhaarNumber},Phone:${member.phone},Kulu:${member.kulu?.name}`;
@@ -407,23 +435,23 @@ export default function Members() {
                   >
                     <QrCode size={13} />
                   </button>
-                  {member.aadhaarPhoto && (
-                    <a
-                      href={member.aadhaarPhoto.startsWith('http') ? member.aadhaarPhoto : `${SERVER_URL}${member.aadhaarPhoto}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="View Aadhaar Card Image"
-                      className="p-2 bg-slate-50 dark:bg-slate-950 text-slate-400 hover:text-brand-500 rounded-xl hover:scale-105 transition-all flex items-center justify-center"
-                    >
-                      <FileText size={13} />
-                    </a>
-                  )}
+
+                  {/* Ledger Button */}
                   <button
                     onClick={() => setDetailsOpen(member)}
-                    className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
+                    className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
                   >
                     <Eye size={12} />
                     Ledger
+                  </button>
+
+                  {/* View Details Button */}
+                  <button
+                    onClick={() => setFullProfileMemberId(member._id)}
+                    className="px-3 py-1.5 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  >
+                    <UserCheck size={12} />
+                    View Details
                   </button>
                 </div>
               </div>
@@ -1093,6 +1121,256 @@ export default function Members() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* Full Customer Profile Page View Modal */}
+      {fullProfileMemberId && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col gap-6 relative">
+            {/* Close button */}
+            <button
+              onClick={() => setFullProfileMemberId(null)}
+              className="absolute right-5 top-5 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all z-10"
+            >
+              <Plus className="rotate-45" size={24} />
+            </button>
+
+            {fullDetailsLoading || !memberFullDetails?.data?.member ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <RefreshCw className="animate-spin text-brand-500" size={32} />
+                <span className="text-xs font-semibold text-slate-400">Loading complete customer record...</span>
+              </div>
+            ) : (
+              (() => {
+                const { member: m, loans: memberLoans } = memberFullDetails.data;
+                const ratingColorMap: any = {
+                  Best: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
+                  Good: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40',
+                  Average: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+                  Poor: 'bg-orange-500/20 text-orange-400 border-orange-500/40',
+                  Worst: 'bg-rose-500/20 text-rose-400 border-rose-500/40',
+                };
+
+                return (
+                  <div className="flex flex-col gap-6">
+                    {/* Profile Header Banner */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white rounded-2xl shadow-xl relative overflow-hidden">
+                      <div className="flex items-center gap-4 z-10">
+                        <div className="w-20 h-20 rounded-2xl bg-white/10 border-2 border-white/20 overflow-hidden flex items-center justify-center text-3xl shrink-0 shadow-inner">
+                          {m.photo ? (
+                            <img src={m.photo.startsWith('http') ? m.photo : `${SERVER_URL}${m.photo}`} alt={m.name} className="w-full h-full object-cover" />
+                          ) : (
+                            '👩'
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-xl font-black tracking-tight">{m.name}</h2>
+                            <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${ratingColorMap[m.feedbackRating || 'Good']}`}>
+                              Rating: {m.feedbackRating || 'Good'}
+                            </span>
+                          </div>
+                          <span className="text-xs text-slate-300">Father's Name: {m.fatherName}</span>
+                          <span className="text-xs text-slate-400">Aadhaar: {m.aadhaarNumber} • Phone: {m.phone}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-start sm:items-end gap-1.5 z-10">
+                        <span className={`px-3 py-1 text-xs font-bold rounded-xl border ${
+                          m.kycStatus === 'verified'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                            : m.kycStatus === 'rejected'
+                            ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                            : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                        }`}>
+                          KYC {m.kycStatus?.toUpperCase() || 'PENDING'}
+                        </span>
+                        <span className="text-[11px] text-slate-400">Group: {m.kulu?.name || 'Unassigned'}</span>
+                      </div>
+                    </div>
+
+                    {/* Feedback Rating Bar ("Worst to Best") */}
+                    <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <Star size={14} className="text-amber-500 fill-amber-500" /> Customer Performance Feedback Rating:
+                        </span>
+                        <span className="text-[10px] text-slate-400">Set or update repayment rating from Worst to Best</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {['Worst', 'Poor', 'Average', 'Good', 'Best'].map((rating) => {
+                          const isSelected = (m.feedbackRating || 'Good') === rating;
+                          const btnStyles: any = {
+                            Best: isSelected ? 'bg-emerald-600 text-white font-black shadow-md' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20',
+                            Good: isSelected ? 'bg-cyan-600 text-white font-black shadow-md' : 'bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/20',
+                            Average: isSelected ? 'bg-amber-600 text-white font-black shadow-md' : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20',
+                            Poor: isSelected ? 'bg-orange-600 text-white font-black shadow-md' : 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20',
+                            Worst: isSelected ? 'bg-rose-600 text-white font-black shadow-md' : 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20',
+                          };
+                          return (
+                            <button
+                              key={rating}
+                              disabled={updateFeedbackMutation.isPending}
+                              onClick={() => updateFeedbackMutation.mutate({ id: m._id, rating })}
+                              className={`px-3 py-1 text-xs rounded-xl font-bold transition-all ${btnStyles[rating]}`}
+                            >
+                              {rating}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Section 1: Customer Personal & Mapped Kulu Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Personal Information */}
+                      <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-800 pb-2">
+                          Personal & Identity Profile
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2.5 text-xs text-slate-600 dark:text-slate-300">
+                          <div><span className="text-slate-400 font-normal">Full Name:</span> <br /><strong>{m.name}</strong></div>
+                          <div><span className="text-slate-400 font-normal">Father's Name:</span> <br /><strong>{m.fatherName}</strong></div>
+                          <div><span className="text-slate-400 font-normal">Gender / Age:</span> <br /><strong>{m.gender} • {m.age} yrs</strong></div>
+                          <div><span className="text-slate-400 font-normal">DOB:</span> <br /><strong>{m.dob ? new Date(m.dob).toLocaleDateString() : 'N/A'}</strong></div>
+                          <div><span className="text-slate-400 font-normal">Primary Phone:</span> <br /><strong>{m.phone}</strong></div>
+                          <div><span className="text-slate-400 font-normal">Alt Phone:</span> <br /><strong>{m.alternatePhone || 'N/A'}</strong></div>
+                          <div><span className="text-slate-400 font-normal">Aadhaar No:</span> <br /><strong className="text-brand-500">{m.aadhaarNumber}</strong></div>
+                          <div><span className="text-slate-400 font-normal">PAN Card:</span> <br /><strong>{m.pan || 'N/A'}</strong></div>
+                          <div><span className="text-slate-400 font-normal">Occupation:</span> <br /><strong>{m.occupation}</strong></div>
+                          <div><span className="text-slate-400 font-normal">Monthly Income:</span> <br /><strong className="text-emerald-500">₹{m.monthlyIncome?.toLocaleString()}</strong></div>
+                        </div>
+                      </div>
+
+                      {/* Group (Kulu) & Address Information */}
+                      <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm justify-between">
+                        <div className="flex flex-col gap-3">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-800 pb-2">
+                            Group (Kulu) & Address Details
+                          </h3>
+                          <div className="grid grid-cols-2 gap-2.5 text-xs text-slate-600 dark:text-slate-300">
+                            <div><span className="text-slate-400 font-normal">Kulu Group:</span> <br /><strong className="text-brand-500">{m.kulu?.name || 'Unassigned'}</strong></div>
+                            <div><span className="text-slate-400 font-normal">Kulu Meeting Day:</span> <br /><strong>{m.kulu?.meetingDay || 'N/A'}</strong></div>
+                            <div><span className="text-slate-400 font-normal">Area Segment:</span> <br /><strong>{m.kulu?.area?.name || m.address?.areaName || 'N/A'}</strong></div>
+                            <div><span className="text-slate-400 font-normal">Field Officer:</span> <br /><strong>{m.kulu?.fieldOfficer?.name || 'Assigned Officer'}</strong></div>
+                            <div className="col-span-2 mt-1"><span className="text-slate-400 font-normal">Full Address:</span> <br /><strong>{m.address?.street}, {m.address?.village}, {m.address?.district} - {m.address?.pincode}</strong></div>
+                          </div>
+                        </div>
+
+                        {/* Nominee */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 rounded-xl text-xs flex justify-between items-center mt-2">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 font-medium">Nominee ({m.nominee?.relation})</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">{m.nominee?.name}</span>
+                          </div>
+                          <span className="font-bold text-slate-500">{m.nominee?.phone}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 2: Media & Documents Vault */}
+                    <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-800 pb-2">
+                        Customer Documents Vault & KYC Media
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {/* Photo */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl flex flex-col items-center gap-2 text-center">
+                          <span className="text-[10px] font-bold text-slate-400">Customer Photo</span>
+                          <div className="w-24 h-24 rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center text-3xl">
+                            {m.photo ? (
+                              <a href={m.photo.startsWith('http') ? m.photo : `${SERVER_URL}${m.photo}`} target="_blank" rel="noopener noreferrer">
+                                <img src={m.photo.startsWith('http') ? m.photo : `${SERVER_URL}${m.photo}`} alt="Photo" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                              </a>
+                            ) : (
+                              '📷'
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Aadhaar Photo */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl flex flex-col items-center gap-2 text-center">
+                          <span className="text-[10px] font-bold text-slate-400">Aadhaar Card Document</span>
+                          <div className="w-24 h-24 rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs text-slate-400 p-1">
+                            {m.aadhaarPhoto ? (
+                              <a href={m.aadhaarPhoto.startsWith('http') ? m.aadhaarPhoto : `${SERVER_URL}${m.aadhaarPhoto}`} target="_blank" rel="noopener noreferrer" className="w-full h-full">
+                                <img src={m.aadhaarPhoto.startsWith('http') ? m.aadhaarPhoto : `${SERVER_URL}${m.aadhaarPhoto}`} alt="Aadhaar" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                              </a>
+                            ) : (
+                              '📄 No Document Uploaded'
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Signature Photo */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl flex flex-col items-center gap-2 text-center">
+                          <span className="text-[10px] font-bold text-slate-400">Customer Signature</span>
+                          <div className="w-24 h-24 rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs text-slate-400 p-1">
+                            {m.signature ? (
+                              <a href={m.signature.startsWith('http') ? m.signature : `${SERVER_URL}${m.signature}`} target="_blank" rel="noopener noreferrer" className="w-full h-full">
+                                <img src={m.signature.startsWith('http') ? m.signature : `${SERVER_URL}${m.signature}`} alt="Signature" className="w-full h-full object-contain hover:scale-105 transition-transform" />
+                              </a>
+                            ) : (
+                              '✍️ Signature Specimen'
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 3: Financial Loans & Ledger Overview */}
+                    <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm">
+                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+                          Loan Accounts & Financial History
+                        </h3>
+                        <span className="text-[11px] font-bold text-slate-400">Total Loans: {memberLoans?.length || 0}</span>
+                      </div>
+
+                      {!memberLoans || memberLoans.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-slate-400">No active or historical loan records found for this customer.</div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
+                                <th className="p-2.5">Loan No</th>
+                                <th className="p-2.5">Scheme</th>
+                                <th className="p-2.5 text-right">Loan Amount</th>
+                                <th className="p-2.5 text-right">Weekly EMI</th>
+                                <th className="p-2.5 text-right">Paid Amount</th>
+                                <th className="p-2.5 text-right">Remaining</th>
+                                <th className="p-2.5 text-center">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                              {memberLoans.map((loan: any) => (
+                                <tr key={loan._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/40">
+                                  <td className="p-2.5 font-bold text-brand-600 dark:text-brand-400">{loan.loanNumber}</td>
+                                  <td className="p-2.5 font-semibold text-slate-700 dark:text-slate-300">{loan.scheme?.name || 'Standard'}</td>
+                                  <td className="p-2.5 text-right font-semibold">₹{loan.loanAmount?.toLocaleString()}</td>
+                                  <td className="p-2.5 text-right font-semibold">₹{loan.weeklyEMI?.toLocaleString()}</td>
+                                  <td className="p-2.5 text-right text-emerald-500 font-bold">₹{loan.paidAmount?.toLocaleString()}</td>
+                                  <td className="p-2.5 text-right text-rose-500 font-bold">₹{loan.remainingAmount?.toLocaleString()}</td>
+                                  <td className="p-2.5 text-center">
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                                      loan.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : loan.status === 'completed' ? 'bg-cyan-500/10 text-cyan-500' : 'bg-rose-500/10 text-rose-500'
+                                    }`}>
+                                      {loan.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
         </div>
       )}
