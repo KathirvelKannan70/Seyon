@@ -80,8 +80,17 @@ export const getTodayCollections = async (req, res, next) => {
         if (scheduleCount === 0) {
           const schedule = [];
           const start = new Date(loan.startDate || kulu.startDate || new Date());
+          const now = new Date();
+          let autoPaidSum = 0;
+
           for (let i = 1; i <= 20; i++) {
             const dueDate = new Date(start.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+            const isPastDue = dueDate <= now;
+
+            if (isPastDue) {
+              autoPaidSum += scheme.emi;
+            }
+
             schedule.push({
               loan: loan._id,
               member: member._id,
@@ -89,11 +98,21 @@ export const getTodayCollections = async (req, res, next) => {
               weekNumber: i,
               dueDate,
               dueAmount: scheme.emi,
-              paidAmount: 0,
-              status: 'pending',
+              paidAmount: isPastDue ? scheme.emi : 0,
+              paidDate: isPastDue ? dueDate : undefined,
+              status: isPastDue ? 'paid' : 'pending',
             });
           }
           await WeeklyCollection.insertMany(schedule);
+
+          if (autoPaidSum > 0) {
+            loan.paidAmount = autoPaidSum;
+            loan.remainingAmount = Math.max(0, loan.outstandingAmount - autoPaidSum);
+            if (loan.remainingAmount <= 0) {
+              loan.status = 'completed';
+            }
+            await loan.save();
+          }
         }
 
         // Find the current pending/partial/late week
@@ -337,6 +356,74 @@ export const bulkCollectPayment = async (req, res, next) => {
       success: true,
       message: `Successfully collected payments for ${collectionsLogged.length} members.`,
       data: collectionsLogged,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const markPastDuesPaid = async (req, res, next) => {
+  try {
+    const { kuluId, loanId } = req.body;
+    const now = new Date();
+
+    const query = {
+      dueDate: { $lte: now },
+      status: { $ne: 'paid' },
+    };
+
+    if (kuluId) {
+      query.kulu = kuluId;
+    }
+    if (loanId) {
+      query.loan = loanId;
+    }
+
+    const pendingPastDues = await WeeklyCollection.find(query).populate('loan');
+
+    let updatedCount = 0;
+    const processedLoans = new Set();
+
+    for (const item of pendingPastDues) {
+      item.status = 'paid';
+      item.paidAmount = item.dueAmount;
+      item.paidDate = item.dueDate || now;
+      await item.save();
+
+      updatedCount++;
+
+      if (item.loan) {
+        processedLoans.add(item.loan._id.toString());
+      }
+    }
+
+    // Recalculate loan balances for all affected loans
+    for (const lId of processedLoans) {
+      const loan = await Loan.findById(lId);
+      if (loan) {
+        const allCollections = await WeeklyCollection.find({ loan: lId });
+        const totalPaid = allCollections.reduce((acc, c) => acc + (c.paidAmount || 0), 0);
+        loan.paidAmount = totalPaid;
+        loan.remainingAmount = Math.max(0, loan.outstandingAmount - totalPaid);
+
+        if (loan.remainingAmount <= 0) {
+          loan.status = 'completed';
+        }
+        await loan.save();
+      }
+    }
+
+    await AuditLog.create({
+      user: req.user.id,
+      action: 'MARK_PAST_DUES_PAID',
+      details: `Marked ${updatedCount} past dues as paid up to date.`,
+      ipAddress: req.ip,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully marked ${updatedCount} past dues as PAID till today!`,
+      updatedCount,
     });
   } catch (error) {
     next(error);

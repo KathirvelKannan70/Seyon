@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, SERVER_URL } from '../App.tsx';
-import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle, UserPlus } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle, UserPlus, Zap } from 'lucide-react';
 
 const schemeEmis: Record<string, number> = {
   '10k': 800,
@@ -21,6 +21,19 @@ export default function Kulus() {
 
   // Form States
   const [name, setName] = useState('');
+  const [kuluSuccessMsg, setKuluSuccessMsg] = useState<string | null>(null);
+
+  const markPastPaidMutation = useMutation({
+    mutationFn: (kuluId?: string) => fetchAPI('/collections/mark-past-paid', 'POST', { kuluId }, token),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['kulus'] });
+      queryClient.invalidateQueries({ queryKey: ['todayCollections'] });
+      queryClient.invalidateQueries({ queryKey: ['loans'] });
+      setKuluSuccessMsg(res.message || 'Marked past dues as PAID!');
+      setTimeout(() => setKuluSuccessMsg(null), 5000);
+    },
+    onError: (err: any) => alert(err.message || 'Operation failed'),
+  });
   const [kuluNumber, setKuluNumber] = useState('');
   const [meetingDay, setMeetingDay] = useState('Friday');
   const [collectionTime, setCollectionTime] = useState('10:00 AM');
@@ -233,6 +246,13 @@ export default function Kulus() {
         </button>
       </div>
 
+      {kuluSuccessMsg && (
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in duration-200">
+          <CheckCircle size={16} />
+          <span>{kuluSuccessMsg}</span>
+        </div>
+      )}
+
       {kulusLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
           {[...Array(3)].map((_, i) => (
@@ -351,16 +371,32 @@ export default function Kulus() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/members?kuluId=${kulu._id}&add=true&fromKulu=true`);
-                }}
-                className="w-full mt-3 py-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-              >
-                <UserPlus size={14} /> Add Member to {kulu.name}
-              </button>
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/members?kuluId=${kulu._id}&add=true&fromKulu=true`);
+                  }}
+                  className="flex-1 py-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <UserPlus size={14} /> Add Member
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Mark all past due EMIs up to today as PAID for ${kulu.name}?`)) {
+                      markPastPaidMutation.mutate(kulu._id);
+                    }
+                  }}
+                  disabled={markPastPaidMutation.isPending}
+                  className="px-2.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all"
+                  title="Mark all past due EMIs up to today as PAID"
+                >
+                  <Zap size={13} /> Paid Till Today
+                </button>
+              </div>
             </div>
           ))}
         </div>

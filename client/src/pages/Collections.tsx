@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, API_URL } from '../App.tsx';
 import {
   Banknote, Search, Calendar, MapPin, Printer, CheckCircle,
-  AlertTriangle, RefreshCw, XCircle, Clock, AlertCircle, Plus
+  AlertTriangle, RefreshCw, XCircle, Clock, AlertCircle, Plus, Zap
 } from 'lucide-react';
 
 export default function Collections() {
@@ -56,6 +56,20 @@ export default function Collections() {
     onError: (err: any) => {
       alert(err.message || 'Bulk collection failed.');
     }
+  });
+
+  const [pastDuesMsg, setPastDuesMsg] = useState<string | null>(null);
+
+  const markPastDuesMutation = useMutation({
+    mutationFn: (kuluId?: string) => fetchAPI('/collections/mark-past-paid', 'POST', { kuluId }, token),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['todayCollections'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      queryClient.invalidateQueries({ queryKey: ['loans'] });
+      setPastDuesMsg(res.message || 'Past dues up to today marked as PAID!');
+      setTimeout(() => setPastDuesMsg(null), 5000);
+    },
+    onError: (err: any) => alert(err.message || 'Operation failed'),
   });
 
   // Start Collection Slips Modal
@@ -158,6 +172,19 @@ export default function Collections() {
           <p className="text-xs text-slate-500">Record weekly EMIs, skip weeks, log GPS locations, and print receipts.</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (confirm('Mark all past due EMIs up to today as PAID for all members/Kulus?')) {
+                markPastDuesMutation.mutate(undefined);
+              }
+            }}
+            disabled={markPastDuesMutation.isPending}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
+            title="Auto-mark all past due EMIs up to today as PAID"
+          >
+            <Zap size={14} />
+            {markPastDuesMutation.isPending ? 'Processing...' : 'Mark All Past Dues Paid'}
+          </button>
           <select value={day} onChange={(e) => setDay(e.target.value)} className="form-input w-44">
             {daysOfWeek.map(d => (
               <option key={d} value={d}>{d} {d === todayDay ? '(Today)' : ''}</option>
@@ -180,6 +207,13 @@ export default function Collections() {
           className="form-input pl-9"
         />
       </div>
+
+      {pastDuesMsg && (
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-3xl flex items-center gap-2.5 text-xs font-bold animate-in fade-in duration-200">
+          <CheckCircle size={18} />
+          <span>{pastDuesMsg}</span>
+        </div>
+      )}
 
       {/* Success Receipt Alert */}
       {paymentSuccess && (

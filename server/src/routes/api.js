@@ -106,6 +106,7 @@ router.patch('/loans/:id/status', protect, authorizeRoles('super_admin', 'manage
 router.get('/collections/today', protect, collectCtrl.getTodayCollections);
 router.post('/collections/collect', protect, collectCtrl.collectPayment);
 router.post('/collections/bulk-collect', protect, collectCtrl.bulkCollectPayment);
+router.post('/collections/mark-past-paid', protect, collectCtrl.markPastDuesPaid);
 
 // ==========================================
 // Expense Routes
