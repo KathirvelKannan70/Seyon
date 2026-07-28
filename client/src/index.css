@@ -9,6 +9,12 @@
     line-height: 1.5;
   }
 
+  /* Hide all placeholder text in every form input */
+  input::placeholder,
+  textarea::placeholder {
+    color: transparent !important;
+  }
+
   /* High contrast headings and text in dark mode */
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
     @apply text-slate-100 font-bold;
