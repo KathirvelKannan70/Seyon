@@ -26,7 +26,7 @@ export default function Kulus() {
   const [areaId, setAreaId] = useState('');
   const [officerId, setOfficerId] = useState('');
   const [notes, setNotes] = useState('');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }));
   const [schemeType, setSchemeType] = useState('15k');
   const [expandedKuluId, setExpandedKuluId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -37,22 +37,28 @@ export default function Kulus() {
   const [newAreaName, setNewAreaName] = useState('');
   const [newAreaCode, setNewAreaCode] = useState('');
 
-  const getDayOfWeek = (dateString: string) => {
+  const getIndiaTodayDate = () => {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  };
+
+  const getIndiaDayOfWeek = (dateString: string) => {
     if (!dateString) return 'Monday';
     const parts = dateString.split('-');
     if (parts.length !== 3) return 'Monday';
     const year = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10) - 1;
     const day = parseInt(parts[2], 10);
-    const dateObj = new Date(year, month, day);
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[dateObj.getDay()] || 'Monday';
+    const dateObj = new Date(Date.UTC(year, month, day, 6, 30, 0));
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      timeZone: 'Asia/Kolkata',
+    }).format(dateObj);
   };
 
   const handleDateChange = (dateVal: string) => {
     setStartDate(dateVal);
     if (dateVal) {
-      setMeetingDay(getDayOfWeek(dateVal));
+      setMeetingDay(getIndiaDayOfWeek(dateVal));
     }
   };
 
@@ -141,9 +147,9 @@ export default function Kulus() {
     setEditingKulu(null);
     setName('');
     setKuluNumber('');
-    const initialDate = new Date().toISOString().split('T')[0];
+    const initialDate = getIndiaTodayDate();
     setStartDate(initialDate);
-    setMeetingDay(getDayOfWeek(initialDate));
+    setMeetingDay(getIndiaDayOfWeek(initialDate));
     setCollectionTime('10:00 AM');
     setAreaId(areasData?.data?.[0]?._id || '');
     setOfficerId(staffData?.data?.filter((s: any) => s.role === 'officer')?.[0]?._id || '');
