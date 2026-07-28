@@ -81,11 +81,12 @@ export const getTodayCollections = async (req, res, next) => {
           const schedule = [];
           const start = new Date(loan.startDate || kulu.startDate || new Date());
           const now = new Date();
+          const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
           let autoPaidSum = 0;
 
           for (let i = 1; i <= 20; i++) {
-            const dueDate = new Date(start.getTime() + i * 7 * 24 * 60 * 60 * 1000);
-            const isPastDue = dueDate <= now;
+            const dueDate = new Date(start.getTime() + (i - 1) * 7 * 24 * 60 * 60 * 1000);
+            const isPastDue = dueDate <= endOfToday;
 
             if (isPastDue) {
               autoPaidSum += scheme.emi;
@@ -366,38 +367,37 @@ export const markPastDuesPaid = async (req, res, next) => {
   try {
     const { kuluId, loanId } = req.body;
     const now = new Date();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-    const query = {
-      dueDate: { $lte: now },
-      status: { $ne: 'paid' },
-    };
+    const query = {};
+    if (kuluId) query.kulu = kuluId;
+    if (loanId) query.loan = loanId;
 
-    if (kuluId) {
-      query.kulu = kuluId;
-    }
-    if (loanId) {
-      query.loan = loanId;
-    }
-
-    const pendingPastDues = await WeeklyCollection.find(query).populate('loan');
+    const allSchedules = await WeeklyCollection.find(query).populate('loan');
 
     let updatedCount = 0;
     const processedLoans = new Set();
 
-    for (const item of pendingPastDues) {
-      item.status = 'paid';
-      item.paidAmount = item.dueAmount;
-      item.paidDate = item.dueDate || now;
-      await item.save();
+    for (const item of allSchedules) {
+      if (!item.loan) continue;
 
-      updatedCount++;
+      const loanStart = new Date(item.loan.startDate || now);
+      // Correct due date: Week 1 = start date, Week 2 = start + 7 days...
+      const correctDueDate = new Date(loanStart.getTime() + (item.weekNumber - 1) * 7 * 24 * 60 * 60 * 1000);
+      item.dueDate = correctDueDate;
 
-      if (item.loan) {
-        processedLoans.add(item.loan._id.toString());
+      // If due date is before or on today, mark as paid!
+      if (item.dueDate <= endOfToday && item.status !== 'paid') {
+        item.status = 'paid';
+        item.paidAmount = item.dueAmount;
+        item.paidDate = item.dueDate;
+        updatedCount++;
       }
+      await item.save();
+      processedLoans.add(item.loan._id.toString());
     }
 
-    // Recalculate loan balances for all affected loans
+    // Recalculate loan balances for all processed loans
     for (const lId of processedLoans) {
       const loan = await Loan.findById(lId);
       if (loan) {
@@ -416,7 +416,7 @@ export const markPastDuesPaid = async (req, res, next) => {
     await AuditLog.create({
       user: req.user.id,
       action: 'MARK_PAST_DUES_PAID',
-      details: `Marked ${updatedCount} past dues as paid up to date.`,
+      details: `Marked ${updatedCount} past dues as paid up to date (${endOfToday.toISOString().split('T')[0]}).`,
       ipAddress: req.ip,
     });
 

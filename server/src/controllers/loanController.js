@@ -52,8 +52,18 @@ export const assignLoan = async (req, res, next) => {
 
     // Populate weekly collections schedules
     const weeklySchedules = [];
+    const now = new Date();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    let autoPaidSum = 0;
+
     for (let i = 1; i <= durationWeeks; i++) {
-      const dueDate = new Date(start.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+      const dueDate = new Date(start.getTime() + (i - 1) * 7 * 24 * 60 * 60 * 1000);
+      const isPastDue = dueDate <= endOfToday;
+
+      if (isPastDue) {
+        autoPaidSum += scheme.weeklyEMI;
+      }
+
       weeklySchedules.push({
         loan: loan._id,
         member: memberId,
@@ -61,11 +71,21 @@ export const assignLoan = async (req, res, next) => {
         weekNumber: i,
         dueDate,
         dueAmount: scheme.weeklyEMI,
-        paidAmount: 0,
-        status: 'pending',
+        paidAmount: isPastDue ? scheme.weeklyEMI : 0,
+        paidDate: isPastDue ? dueDate : undefined,
+        status: isPastDue ? 'paid' : 'pending',
       });
     }
     await WeeklyCollection.insertMany(weeklySchedules);
+
+    if (autoPaidSum > 0) {
+      loan.paidAmount = autoPaidSum;
+      loan.remainingAmount = Math.max(0, loan.outstandingAmount - autoPaidSum);
+      if (loan.remainingAmount <= 0) {
+        loan.status = 'completed';
+      }
+      await loan.save();
+    }
 
     // Record processing fee as income
     await Income.create({
