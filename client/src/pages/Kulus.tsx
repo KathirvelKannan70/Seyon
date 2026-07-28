@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, SERVER_URL } from '../App.tsx';
-import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle, UserPlus } from 'lucide-react';
 
 const schemeEmis: Record<string, number> = {
   '10k': 800,
@@ -11,6 +11,7 @@ const schemeEmis: Record<string, number> = {
 };
 
 export default function Kulus() {
+  const navigate = useNavigate();
   const { token } = useAuth();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -349,6 +350,17 @@ export default function Kulus() {
                   </button>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/members?kuluId=${kulu._id}&add=true`);
+                }}
+                className="w-full mt-3 py-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              >
+                <UserPlus size={14} /> Add Member to {kulu.name}
+              </button>
             </div>
           ))}
         </div>
@@ -559,9 +571,17 @@ export default function Kulus() {
             <button onClick={() => setViewingMembersKulu(null)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
               <Plus className="rotate-45" size={20} />
             </button>
-            <div className="flex flex-col gap-1 border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-bold">Members Enrolled in {viewingMembersKulu.name}</h3>
-              <p className="text-xs text-slate-450">Showing all registered self-help group members and profiles.</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 pr-8">
+              <div className="flex flex-col gap-0.5">
+                <h3 className="text-base font-bold">Members Enrolled in {viewingMembersKulu.name}</h3>
+                <p className="text-xs text-slate-450">Showing all registered self-help group members and profiles.</p>
+              </div>
+              <button
+                onClick={() => navigate(`/members?kuluId=${viewingMembersKulu._id}&add=true`)}
+                className="px-3.5 py-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 active:scale-95 transition-all"
+              >
+                <UserPlus size={14} /> Add Member
+              </button>
             </div>
 
             {membersLoading ? (
@@ -569,7 +589,15 @@ export default function Kulus() {
                 <div className="w-6 h-6 rounded-full border-2 border-slate-200 border-t-brand-500 animate-spin" />
               </div>
             ) : !membersListData?.data || membersListData.data.length === 0 ? (
-              <p className="text-center py-8 text-slate-400 text-xs">No members enrolled in this Kulu yet.</p>
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <p className="text-slate-400 text-xs">No members enrolled in this Kulu yet.</p>
+                <button
+                  onClick={() => navigate(`/members?kuluId=${viewingMembersKulu._id}&add=true`)}
+                  className="px-4 py-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <UserPlus size={15} /> Add First Member to {viewingMembersKulu.name}
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {membersListData.data.map((m: any) => (

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
 import {
@@ -10,6 +10,7 @@ import {
 
 export default function Members() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
@@ -68,6 +69,18 @@ export default function Members() {
     queryKey: ['kulus'],
     queryFn: () => fetchAPI('/kulus', 'GET', null, token),
   });
+
+  useEffect(() => {
+    const targetKulu = searchParams.get('kuluId') || searchParams.get('kulu');
+    const shouldAdd = searchParams.get('add') === 'true' || !!targetKulu;
+    
+    if (shouldAdd && kulusData?.data) {
+      openAddModal();
+      if (targetKulu) {
+        setKuluId(targetKulu);
+      }
+    }
+  }, [searchParams, !!kulusData?.data]);
 
   // Mutations
   const createMutation = useMutation({
