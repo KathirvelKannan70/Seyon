@@ -5,7 +5,20 @@ import WeeklyCollection from '../models/WeeklyCollection.js';
 
 export const createKulu = async (req, res, next) => {
   try {
-    const { kuluNumber, name, meetingDay, collectionTime, area, fieldOfficer, status, notes, startDate, schemeType, incharge } = req.body;
+    let { kuluNumber, name, meetingDay, collectionTime, area, fieldOfficer, status, notes, startDate, schemeType, incharge } = req.body;
+
+    if (!kuluNumber || !String(kuluNumber).trim()) {
+      const allKulus = await Kulu.find({}, 'kuluNumber');
+      let maxNum = 0;
+      allKulus.forEach((k) => {
+        const match = String(k.kuluNumber || '').match(/\d+/);
+        if (match) {
+          const val = parseInt(match[0], 10);
+          if (!isNaN(val) && val > maxNum) maxNum = val;
+        }
+      });
+      kuluNumber = String(maxNum + 1);
+    }
 
     const kuluExists = await Kulu.findOne({ kuluNumber });
     if (kuluExists) {

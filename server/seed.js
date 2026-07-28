@@ -93,7 +93,7 @@ const seed = async () => {
 
     // Create Kulus
     const FridayKulu = await Kulu.create({
-      kuluNumber: 'KULU-101',
+      kuluNumber: '1',
       name: 'Annai Street Kulu',
       meetingDay: 'Friday',
       collectionTime: '09:30 AM',
@@ -104,7 +104,7 @@ const seed = async () => {
     });
 
     const TuesdayKulu = await Kulu.create({
-      kuluNumber: 'KULU-102',
+      kuluNumber: '2',
       name: 'Sakthi Street Kulu',
       meetingDay: 'Tuesday',
       collectionTime: '10:30 AM',

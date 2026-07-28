@@ -122,7 +122,18 @@ export default function Kulus() {
   const openAddModal = () => {
     setEditingKulu(null);
     setName('');
-    setKuluNumber('KULU-' + Math.floor(100 + Math.random() * 900));
+    
+    // Auto-calculate sequential Kulu number (1, 2, 3...)
+    const existingKulus = kulusData?.data || [];
+    let maxNum = 0;
+    existingKulus.forEach((k: any) => {
+      const numMatch = String(k.kuluNumber || '').match(/\d+/);
+      if (numMatch) {
+        const val = parseInt(numMatch[0], 10);
+        if (!isNaN(val) && val > maxNum) maxNum = val;
+      }
+    });
+    setKuluNumber(String(maxNum + 1));
     setMeetingDay('Friday');
     setCollectionTime('09:30 AM');
     setAreaId(areasData?.data?.[0]?._id || '');
@@ -352,7 +363,7 @@ export default function Kulus() {
                 <input
                   type="text"
                   required
-                  placeholder="KULU-100"
+                  placeholder="1"
                   value={kuluNumber}
                   onChange={(e) => setKuluNumber(e.target.value)}
                   className="form-input"
