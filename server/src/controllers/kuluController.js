@@ -102,7 +102,11 @@ export const getKulus = async (req, res, next) => {
           collectionStatus,
         };
       })
-    );
+    kulusWithStats.sort((a, b) => {
+      const numA = String(a.kuluNumber || a.name || '');
+      const numB = String(b.kuluNumber || b.name || '');
+      return numA.localeCompare(numB, undefined, { numeric: true, sensitivity: 'base' });
+    });
 
     res.status(200).json({ success: true, data: kulusWithStats });
   } catch (error) {

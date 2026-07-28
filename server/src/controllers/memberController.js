@@ -92,6 +92,20 @@ export const getMembers = async (req, res, next) => {
         populate: { path: 'area' },
       });
 
+    // Natural sort by Kulu Number (A0, A1... B0, B1)
+    members.sort((a, b) => {
+      const kuluNumA = String(a.kulu?.kuluNumber || a.kulu?.name || '');
+      const kuluNumB = String(b.kulu?.kuluNumber || b.kulu?.name || '');
+
+      if (kuluNumA && kuluNumB && kuluNumA !== kuluNumB) {
+        return kuluNumA.localeCompare(kuluNumB, undefined, { numeric: true, sensitivity: 'base' });
+      }
+      if (kuluNumA && !kuluNumB) return -1;
+      if (!kuluNumA && kuluNumB) return 1;
+
+      return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+    });
+
     res.status(200).json({ success: true, data: members });
   } catch (error) {
     next(error);

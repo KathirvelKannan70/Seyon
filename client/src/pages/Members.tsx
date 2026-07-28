@@ -58,6 +58,20 @@ export default function Members() {
     queryFn: () => fetchAPI(`/members?search=${search}&kuluId=${kuluFilter}`, 'GET', null, token),
   });
 
+  // Sort members naturally by Kulu Number (A0, A1... B0, B1)
+  const sortedMembers = membersData?.data ? [...membersData.data].sort((a: any, b: any) => {
+    const kuluNumA = String(a.kulu?.kuluNumber || a.kulu?.name || '');
+    const kuluNumB = String(b.kulu?.kuluNumber || b.kulu?.name || '');
+
+    if (kuluNumA && kuluNumB && kuluNumA !== kuluNumB) {
+      return kuluNumA.localeCompare(kuluNumB, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    if (kuluNumA && !kuluNumB) return -1;
+    if (!kuluNumA && kuluNumB) return 1;
+
+    return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+  }) : [];
+
   const { data: kulusData } = useQuery({
     queryKey: ['kulus'],
     queryFn: () => fetchAPI('/kulus', 'GET', null, token),
@@ -387,14 +401,14 @@ export default function Members() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                {!membersData?.data || membersData.data.length === 0 ? (
+                {!sortedMembers || sortedMembers.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
                       No members found matching your search.
                     </td>
                   </tr>
                 ) : (
-                  membersData.data.map((member: any, idx: number) => (
+                  sortedMembers.map((member: any, idx: number) => (
                     <tr key={member._id} className="hover:bg-slate-50/70 dark:hover:bg-slate-850/50 transition-colors">
                       <td className="p-3.5 font-bold text-slate-400">{idx + 1}</td>
                       <td className="p-3.5">
@@ -484,7 +498,7 @@ export default function Members() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {membersData?.data?.map((member: any) => (
+          {sortedMembers.map((member: any) => (
             <div key={member._id} className="p-5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col justify-between shadow-premium dark:shadow-premium-dark hover:scale-[1.01] transition-all">
               <div className="flex gap-4">
                 {/* Photo Placeholder */}
