@@ -37,12 +37,22 @@ export default function Kulus() {
   const [newAreaName, setNewAreaName] = useState('');
   const [newAreaCode, setNewAreaCode] = useState('');
 
+  const getDayOfWeek = (dateString: string) => {
+    if (!dateString) return 'Monday';
+    const parts = dateString.split('-');
+    if (parts.length !== 3) return 'Monday';
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const dateObj = new Date(year, month, day);
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[dateObj.getDay()] || 'Monday';
+  };
+
   const handleDateChange = (dateVal: string) => {
     setStartDate(dateVal);
     if (dateVal) {
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const selectedDay = days[new Date(dateVal).getDay()];
-      setMeetingDay(selectedDay);
+      setMeetingDay(getDayOfWeek(dateVal));
     }
   };
 
@@ -131,12 +141,13 @@ export default function Kulus() {
     setEditingKulu(null);
     setName('');
     setKuluNumber('');
-    setMeetingDay('Friday');
+    const initialDate = new Date().toISOString().split('T')[0];
+    setStartDate(initialDate);
+    setMeetingDay(getDayOfWeek(initialDate));
     setCollectionTime('10:00 AM');
     setAreaId(areasData?.data?.[0]?._id || '');
     setOfficerId(staffData?.data?.filter((s: any) => s.role === 'officer')?.[0]?._id || '');
     setNotes('');
-    setStartDate(new Date().toISOString().split('T')[0]);
     setInchargeId('');
     setSchemeType('15k');
     setFormError(null);
