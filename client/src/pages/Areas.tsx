@@ -158,7 +158,7 @@ export default function Areas() {
               </div>
 
               <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-800/40 pt-4 mt-4">
-                <span className="text-[10px] text-slate-400 font-semibold">{area.kuluCount} Active Kulus</span>
+                <span className="text-[10px] text-slate-400 font-semibold">{area.kuluCount} Active Centres</span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => openEditModal(area)}

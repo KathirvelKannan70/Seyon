@@ -153,7 +153,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const menuItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['super_admin', 'manager', 'officer', 'viewer'] },
     { name: 'Areas', path: '/areas', icon: MapPin, roles: ['super_admin', 'manager'] },
-    { name: 'Kulus (Groups)', path: '/kulus', icon: Users, roles: ['super_admin', 'manager', 'officer'] },
+    { name: 'Centres (Groups)', path: '/kulus', icon: Users, roles: ['super_admin', 'manager', 'officer'] },
     { name: 'Members Register', path: '/members', icon: ShieldCheck, roles: ['super_admin', 'manager', 'officer', 'viewer'] },
     { name: 'CIBIL Score Check', path: '/cibil', icon: Gauge, roles: ['super_admin', 'manager', 'officer'] },
     { name: 'Loans & Schemes', path: '/loans', icon: Landmark, roles: ['super_admin', 'manager'] },

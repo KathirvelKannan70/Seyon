@@ -369,9 +369,9 @@ export default function Members() {
           onChange={(e) => setKuluNumberFilter(e.target.value)}
           className="form-input sm:w-44 font-bold"
         >
-          <option value="">All Kulu No</option>
+          <option value="">All Centre No</option>
           {uniqueKuluNumbers.map((num: string) => (
-            <option key={num} value={num}>Kulu {num}</option>
+            <option key={num} value={num}>Centre {num}</option>
           ))}
         </select>
         <select
@@ -379,7 +379,7 @@ export default function Members() {
           onChange={(e) => setKuluFilter(e.target.value)}
           className="form-input sm:w-60"
         >
-          <option value="">All Kulu Names</option>
+          <option value="">All Centre Names</option>
           {kulusData?.data?.map((kulu: any) => (
             <option key={kulu._id} value={kulu._id}>{kulu.name} ({kulu.meetingDay})</option>
           ))}
@@ -416,8 +416,8 @@ export default function Members() {
                 <tr className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800 text-xs tracking-wide">
                   <th className="py-4 px-4 text-center">#</th>
                   <th className="py-4 px-4">Member Name</th>
-                  <th className="py-4 px-4 text-center font-extrabold text-emerald-600 dark:text-emerald-400">Kulu No</th>
-                  <th className="py-4 px-4">Kulu Name</th>
+                  <th className="py-4 px-4 text-center font-extrabold text-emerald-600 dark:text-emerald-400">Centre No</th>
+                  <th className="py-4 px-4">Centre Name</th>
                   <th className="py-4 px-4">Phone Number</th>
                   <th className="py-4 px-4">Aadhaar No</th>
                   <th className="py-4 px-4">Nominee Details</th>
@@ -994,9 +994,9 @@ export default function Members() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="font-semibold text-slate-400">Assign to Kulu Group</label>
+                <label className="font-semibold text-slate-400">Assign to Centre Group</label>
                 <select value={kuluId} onChange={(e) => setKuluId(e.target.value)} className="form-input" required>
-                  <option value="">Choose Group...</option>
+                  <option value="">Choose Centre...</option>
                   {kulusData?.data?.map((k: any) => (
                     <option key={k._id} value={k._id}>{k.name} ({k.meetingDay})</option>
                   ))}

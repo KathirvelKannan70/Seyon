@@ -59,7 +59,7 @@ export default function Dashboard() {
     {
       label: "Today's Due Target",
       val: `₹${summary.todayDue.toLocaleString()}`,
-      change: `${summary.todayKulu} Kulu Meeting Today`,
+      change: `${summary.todayKulu} Centre Meeting Today`,
       icon: Calendar,
       color: 'text-amber-500 bg-amber-500/10',
     },
@@ -98,7 +98,7 @@ export default function Dashboard() {
           </Link>
           <Link to="/kulus?add=true" className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium text-xs rounded-xl flex items-center gap-1.5 transition-all">
             <Plus size={15} />
-            Add Kulu
+            Add Centre
           </Link>
           <Link to="/members" className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium text-xs rounded-xl flex items-center gap-1.5 transition-all">
             <UserCheck size={15} />

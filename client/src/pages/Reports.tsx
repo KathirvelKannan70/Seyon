@@ -35,7 +35,7 @@ export default function Reports() {
   };
 
   const excelReports = [
-    { title: 'Registered Members Directory', desc: 'Aadhaar, phone, PAN, address details, and Kulu groups.', type: 'members' },
+    { title: 'Registered Members Directory', desc: 'Aadhaar, phone, PAN, address details, and Centre groups.', type: 'members' },
     { title: 'Loan Accounts Ledger', desc: 'Disbursements dates, EMI sizes, amounts paid, and remaining balances.', type: 'loans' },
     { title: 'Payments & Collections Ledger', desc: 'All receipt details, times, payment modes, GPS tags, and officers.', type: 'collections' },
     { title: 'Operations Expenses Ledger', desc: 'Salaries, overheads, rents, travel costs, and dates.', type: 'expenses' },
@@ -159,7 +159,7 @@ export default function Reports() {
               <FileSpreadsheet size={18} />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-bold">Daily Kulu Operations Ledger</span>
+              <span className="text-sm font-bold">Daily Centre Operations Ledger</span>
               <span className="text-[10px] text-slate-400">Generate operations, location, and collection reports for a specific weekday.</span>
             </div>
           </div>

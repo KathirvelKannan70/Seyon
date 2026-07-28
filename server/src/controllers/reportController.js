@@ -86,7 +86,7 @@ export const exportReportExcel = async (req, res, next) => {
     if (type === 'members') {
       filename = 'members_report.csv';
       const items = await Member.find().populate({ path: 'kulu', populate: { path: 'area' } });
-      csvContent = 'Member Name,Father Name,Phone,Aadhaar,PAN,Kulu Name,Area Name,KYC Status,Status\n';
+      csvContent = 'Member Name,Father Name,Phone,Aadhaar,PAN,Centre Name,Area Name,KYC Status,Status\n';
       items.forEach(i => {
         csvContent += `"${i.name}","${i.fatherName}","${i.phone}","${i.aadhaarNumber}","${i.pan || ''}","${i.kulu?.name || ''}","${i.kulu?.area?.name || ''}","${i.kycStatus}","${i.status}"\n`;
       });
@@ -221,7 +221,7 @@ export const exportKuluDayExcel = async (req, res, next) => {
       '20k': { amount: 20000, emi: 1100 },
     };
 
-    let csvContent = '\uFEFFKulu Number,Kulu Name,Scheme,Location (Area),Officer,Incharge Mobile,Members,Expected EMI,Amount Collected,Pending Amount\n';
+    let csvContent = '\uFEFFCentre Number,Centre Name,Scheme,Location (Area),Officer,Incharge Mobile,Members,Expected EMI,Amount Collected,Pending Amount\n';
 
     for (const kulu of kulus) {
       const members = await Member.find({ kulu: kulu._id });
@@ -280,14 +280,14 @@ export const getKuluDayPDF = async (req, res, next) => {
     // Styling Header
     doc.fillColor('#0f172a').rect(0, 0, 600, 70).fill();
     doc.fillColor('#ffffff').fontSize(14).text('SEYON MICROFINANCE SYSTEM', 40, 20);
-    doc.fontSize(10).fillColor('#94a3b8').text(`KULU OPERATIONS LEDGER - ${day.toUpperCase()} (${new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })})`, 40, 42);
+    doc.fontSize(10).fillColor('#94a3b8').text(`CENTRE OPERATIONS LEDGER - ${day.toUpperCase()} (${new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })})`, 40, 42);
 
     let y = 95;
     
     // Draw table headers
     doc.fillColor('#f1f5f9').rect(40, y, 515, 20).fill();
     doc.fillColor('#334155').font('Helvetica-Bold').fontSize(8);
-    doc.text('KULU NAME', 45, y + 6);
+    doc.text('CENTRE NAME', 45, y + 6);
     doc.text('SCHEME', 135, y + 6);
     doc.text('LOCATION (AREA)', 180, y + 6);
     doc.text('INCHARGE MOBILE', 260, y + 6);

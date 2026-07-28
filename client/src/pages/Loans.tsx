@@ -32,7 +32,7 @@ export default function Loans() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Active Loan Accounts</h1>
-          <p className="text-xs text-slate-500">Overview ledger of auto-disbursed Kulu scheme loan portfolios.</p>
+          <p className="text-xs text-slate-500">Overview ledger of auto-disbursed Centre scheme loan portfolios.</p>
         </div>
         <button
           onClick={() => {
@@ -66,7 +66,7 @@ export default function Loans() {
                 <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800/40">
                   <th className="p-4">Loan No</th>
                   <th className="p-4">Member Name</th>
-                  <th className="p-4">Kulu Name</th>
+                  <th className="p-4">Centre Name</th>
                   <th className="p-4">Scheme Type</th>
                   <th className="p-4">Principal Amount</th>
                   <th className="p-4">Weekly EMI</th>

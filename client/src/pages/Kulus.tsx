@@ -234,7 +234,7 @@ export default function Kulus() {
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kulus (Street Groups)</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Centres (Street Groups)</h1>
           <p className="text-xs text-slate-500">Configure self-help groups, weekday schedule, and field officer duties.</p>
         </div>
         <button
@@ -242,7 +242,7 @@ export default function Kulus() {
           className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-brand-500 hover:from-cyan-600 hover:to-brand-600 text-white font-medium text-xs rounded-xl shadow-sm flex items-center gap-1.5 active:scale-95 transition-all"
         >
           <Plus size={15} />
-          Create Kulu
+          Create Centre
         </button>
       </div>
 
@@ -410,7 +410,7 @@ export default function Kulus() {
               <Plus className="rotate-45" size={20} />
             </button>
 
-            <h3 className="text-base font-bold">{editingKulu ? 'Modify Kulu Group' : 'Add Kulu Group'}</h3>
+            <h3 className="text-base font-bold">{editingKulu ? 'Modify Centre Group' : 'Add Centre Group'}</h3>
 
             {formError && (
               <div className="p-3 bg-rose-500/10 text-rose-400 text-xs border border-rose-500/20 rounded-xl flex items-center gap-2">
@@ -421,7 +421,7 @@ export default function Kulus() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-400">Kulu Number</label>
+                <label className="text-xs font-semibold text-slate-400">Centre Number</label>
                 <input
                   type="text"
                   required
@@ -433,7 +433,7 @@ export default function Kulus() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-400">Kulu Name</label>
+                <label className="text-xs font-semibold text-slate-400">Centre Name</label>
                 <input
                   type="text"
                   required
@@ -445,7 +445,7 @@ export default function Kulus() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-400">Select Kulu Scheme</label>
+                <label className="text-xs font-semibold text-slate-400">Select Centre Scheme</label>
                 <select value={schemeType} onChange={(e) => setSchemeType(e.target.value)} className="form-input">
                   <option value="10k">10k Scheme (Weekly Repayment: ₹800/member)</option>
                   <option value="15k">15k Scheme (Weekly Repayment: ₹930/member)</option>

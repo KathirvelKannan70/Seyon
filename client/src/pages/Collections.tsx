@@ -240,7 +240,7 @@ export default function Collections() {
         <div className="h-64 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 animate-pulse" />
       ) : filteredData.length === 0 ? (
         <div className="p-8 text-center bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl text-slate-400 text-xs">
-          No collections scheduled for {day}. Try switching weekdays above or verify Kulu setups.
+          No collections scheduled for {day}. Try switching weekdays above or verify Centre setups.
         </div>
       ) : (
         <div className="flex flex-col gap-6">
