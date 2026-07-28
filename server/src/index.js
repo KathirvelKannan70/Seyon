@@ -47,12 +47,27 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health Check
-app.get('/', (req, res) => {
+app.get('/api-health', (req, res) => {
   res.status(200).json({ status: 'healthy', service: 'Seyon Microfinance Management Backend' });
 });
 
 // Bind APIs
 app.use('/api', router);
+
+// Serve Static Client (dist) & SPA Catch-all Routing
+const clientDistPath = path.join(__dirname, '../../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+      res.sendFile(path.join(clientDistPath, 'index.html'));
+    }
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.status(200).json({ status: 'healthy', service: 'Seyon Microfinance Management Backend' });
+  });
+}
 
 // Error Handler
 app.use(errorHandler);
