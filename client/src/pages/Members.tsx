@@ -5,7 +5,7 @@ import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
   QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle,
-  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown, Copy, CheckCircle
+  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown, Copy, CheckCircle, LayoutList, Grid
 } from 'lucide-react';
 
 export default function Members() {
@@ -19,6 +19,7 @@ export default function Members() {
   const [kuluFilter, setKuluFilter] = useState('');
 
   // UI States
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [modalOpen, setModalOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState<any>(null);
   const [qrCodeOpen, setQrCodeOpen] = useState<any>(null);
@@ -345,13 +346,141 @@ export default function Members() {
             <option key={kulu._id} value={kulu._id}>{kulu.name} ({kulu.meetingDay})</option>
           ))}
         </select>
+        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800 shrink-0">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              viewMode === 'table' ? 'bg-white dark:bg-slate-800 text-brand-500 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+            }`}
+            title="Excel Table View"
+          >
+            <LayoutList size={14} /> Excel Table
+          </button>
+          <button
+            onClick={() => setViewMode('cards')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              viewMode === 'cards' ? 'bg-white dark:bg-slate-800 text-brand-500 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+            }`}
+            title="Cards View"
+          >
+            <Grid size={14} /> Cards
+          </button>
+        </div>
       </div>
 
       {membersLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-44 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl" />
-          ))}
+        <div className="h-64 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 animate-pulse" />
+      ) : viewMode === 'table' ? (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl overflow-hidden shadow-premium dark:shadow-premium-dark">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800/40">
+                  <th className="p-3.5">#</th>
+                  <th className="p-3.5">Member Name</th>
+                  <th className="p-3.5">Assigned Kulu (Group)</th>
+                  <th className="p-3.5">Phone Number</th>
+                  <th className="p-3.5">Aadhaar No</th>
+                  <th className="p-3.5">Nominee Details</th>
+                  <th className="p-3.5">Rating & Status</th>
+                  <th className="p-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                {!membersData?.data || membersData.data.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
+                      No members found matching your search.
+                    </td>
+                  </tr>
+                ) : (
+                  membersData.data.map((member: any, idx: number) => (
+                    <tr key={member._id} className="hover:bg-slate-50/70 dark:hover:bg-slate-850/50 transition-colors">
+                      <td className="p-3.5 font-bold text-slate-400">{idx + 1}</td>
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-xs border border-slate-200/50 dark:border-slate-700">
+                            {member.photo ? (
+                              <img src={member.photo.startsWith('http') ? member.photo : `${SERVER_URL}${member.photo}`} alt={member.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span>👩</span>
+                            )}
+                          </div>
+                          <span className="font-bold text-slate-800 dark:text-slate-100">{member.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-3.5">
+                        {member.kulu ? (
+                          <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 inline-flex items-center gap-1">
+                            👥 {member.kulu.name} {member.kulu.kuluNumber ? `(#${member.kulu.kuluNumber})` : ''}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-400 font-semibold">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">{member.phone || 'N/A'}</td>
+                      <td className="p-3.5 font-mono text-slate-500">{member.aadhaarNumber || 'N/A'}</td>
+                      <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                        {member.nomineeName ? (
+                          <span>{member.nomineeName} <small className="text-slate-400">({member.nomineeRelation || 'Nominee'})</small></span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                            member.kycStatus === 'verified' ? 'bg-emerald-500/10 text-emerald-500' :
+                            member.kycStatus === 'rejected' ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500'
+                          }`}>
+                            {member.kycStatus?.toUpperCase() || 'PENDING'}
+                          </span>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">
+                            ⭐ {member.feedbackRating || 'Good'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setFullProfileMemberId(member._id)}
+                            className="px-2.5 py-1 bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-400 font-bold text-[11px] rounded-lg transition-all"
+                            title="View Full Member Profile"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => setDetailsOpen(member)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                            title="View Ledger"
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              const qrValue = `Name:${member.name},Aadhaar:${member.aadhaarNumber},Phone:${member.phone},Kulu:${member.kulu?.name}`;
+                              setQrCodeOpen(qrValue);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-brand-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                            title="QR Code"
+                          >
+                            <QrCode size={14} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmMember(member)}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-500/10 transition-all"
+                            title="Delete Member"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
