@@ -369,9 +369,9 @@ export default function Members() {
           onChange={(e) => setKuluNumberFilter(e.target.value)}
           className="form-input sm:w-44 font-bold"
         >
-          <option value="">All Kulu #</option>
+          <option value="">All Kulu No</option>
           {uniqueKuluNumbers.map((num: string) => (
-            <option key={num} value={num}>Kulu #{num}</option>
+            <option key={num} value={num}>Kulu {num}</option>
           ))}
         </select>
         <select
@@ -409,23 +409,23 @@ export default function Members() {
       {membersLoading ? (
         <div className="h-64 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 animate-pulse" />
       ) : viewMode === 'table' ? (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl overflow-hidden shadow-premium dark:shadow-premium-dark">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800/40">
-                  <th className="p-3.5">#</th>
-                  <th className="p-3.5">Member Name</th>
-                  <th className="p-3.5 font-bold text-brand-600 dark:text-brand-400">Kulu No</th>
-                  <th className="p-3.5">Kulu Name</th>
-                  <th className="p-3.5">Phone Number</th>
-                  <th className="p-3.5">Aadhaar No</th>
-                  <th className="p-3.5">Nominee Details</th>
-                  <th className="p-3.5">Rating & Status</th>
-                  <th className="p-3.5 text-right">Actions</th>
+                <tr className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800 text-xs tracking-wide">
+                  <th className="py-4 px-4 text-center">#</th>
+                  <th className="py-4 px-4">Member Name</th>
+                  <th className="py-4 px-4 text-center font-extrabold text-emerald-600 dark:text-emerald-400">Kulu No</th>
+                  <th className="py-4 px-4">Kulu Name</th>
+                  <th className="py-4 px-4">Phone Number</th>
+                  <th className="py-4 px-4">Aadhaar No</th>
+                  <th className="py-4 px-4">Nominee Details</th>
+                  <th className="py-4 px-4">Rating & Status</th>
+                  <th className="py-4 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+              <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60">
                 {!filteredAndSortedMembers || filteredAndSortedMembers.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="p-8 text-center text-slate-400 font-medium">
@@ -434,59 +434,50 @@ export default function Members() {
                   </tr>
                 ) : (
                   filteredAndSortedMembers.map((member: any, idx: number) => (
-                    <tr key={member._id} className="hover:bg-slate-50/70 dark:hover:bg-slate-850/50 transition-colors">
-                      <td className="p-3.5 font-bold text-slate-400">{idx + 1}</td>
-                      <td className="p-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-xs border border-slate-200/50 dark:border-slate-700">
-                            {member.photo ? (
-                              <img src={member.photo.startsWith('http') ? member.photo : `${SERVER_URL}${member.photo}`} alt={member.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <span>👩</span>
-                            )}
-                          </div>
-                          <span className="font-bold text-slate-800 dark:text-slate-100">{member.name}</span>
-                        </div>
+                    <tr key={member._id} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-400 font-mono">{idx + 1}</td>
+                      <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-slate-100 text-xs">
+                        {member.name}
                       </td>
-                      <td className="p-3.5">
+                      <td className="py-3.5 px-4 text-center">
                         {member.kulu?.kuluNumber ? (
-                          <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 font-mono inline-block">
-                            #{member.kulu.kuluNumber}
+                          <span className="px-2.5 py-1 rounded-md text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono inline-block min-w-[32px] text-center">
+                            {member.kulu.kuluNumber}
                           </span>
                         ) : (
                           <span className="text-slate-400 font-mono text-xs">-</span>
                         )}
                       </td>
-                      <td className="p-3.5 font-bold text-slate-700 dark:text-slate-200">
+                      <td className="py-3.5 px-4 font-bold text-slate-700 dark:text-slate-200">
                         {member.kulu?.name || 'Unassigned'}
                       </td>
-                      <td className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">{member.phone || 'N/A'}</td>
-                      <td className="p-3.5 font-mono text-slate-500">{member.aadhaarNumber || 'N/A'}</td>
-                      <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                      <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300 font-mono text-xs">{member.phone || 'N/A'}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400 text-xs">{member.aadhaarNumber || 'N/A'}</td>
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">
                         {member.nomineeName ? (
                           <span>{member.nomineeName} <small className="text-slate-400">({member.nomineeRelation || 'Nominee'})</small></span>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
                       </td>
-                      <td className="p-3.5">
+                      <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                             member.kycStatus === 'verified' ? 'bg-emerald-500/10 text-emerald-500' :
                             member.kycStatus === 'rejected' ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500'
                           }`}>
                             {member.kycStatus?.toUpperCase() || 'PENDING'}
                           </span>
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                             ⭐ {member.feedbackRating || 'Good'}
                           </span>
                         </div>
                       </td>
-                      <td className="p-3.5 text-right">
+                      <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setFullProfileMemberId(member._id)}
-                            className="px-2.5 py-1 bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-400 font-bold text-[11px] rounded-lg transition-all"
+                            className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-xl shadow-sm transition-all shrink-0"
                             title="View Full Member Profile"
                           >
                             View Details
