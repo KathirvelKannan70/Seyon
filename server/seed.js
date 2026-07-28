@@ -96,7 +96,7 @@ const seed = async () => {
       kuluNumber: '1',
       name: 'Annai Street Kulu',
       meetingDay: 'Friday',
-      collectionTime: '09:30 AM',
+      collectionTime: '10:00 AM',
       area: areaNorth._id,
       fieldOfficer: officer._id,
       status: 'active',

@@ -20,7 +20,7 @@ export default function Kulus() {
   const [name, setName] = useState('');
   const [kuluNumber, setKuluNumber] = useState('');
   const [meetingDay, setMeetingDay] = useState('Friday');
-  const [collectionTime, setCollectionTime] = useState('09:30 AM');
+  const [collectionTime, setCollectionTime] = useState('10:00 AM');
   const [areaId, setAreaId] = useState('');
   const [officerId, setOfficerId] = useState('');
   const [notes, setNotes] = useState('');
@@ -135,7 +135,7 @@ export default function Kulus() {
     });
     setKuluNumber(String(maxNum + 1));
     setMeetingDay('Friday');
-    setCollectionTime('09:30 AM');
+    setCollectionTime('10:00 AM');
     setAreaId(areasData?.data?.[0]?._id || '');
     setOfficerId(staffData?.data?.filter((s: any) => s.role === 'officer')?.[0]?._id || '');
     setNotes('');
@@ -415,7 +415,7 @@ export default function Kulus() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. 09:30 AM"
+                    placeholder="e.g. 10:00 AM"
                     value={collectionTime}
                     onChange={(e) => setCollectionTime(e.target.value)}
                     className="form-input"
