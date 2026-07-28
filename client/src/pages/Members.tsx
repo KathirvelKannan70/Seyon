@@ -39,6 +39,10 @@ export default function Members() {
   const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [occupation, setOccupation] = useState('');
   const [monthlyIncome, setMonthlyIncome] = useState<number>(12000);
+  const [street, setStreet] = useState('');
+  const [village, setVillage] = useState('');
+  const [district, setDistrict] = useState('Madurai');
+  const [pincode, setPincode] = useState('625001');
   const [nomineeName, setNomineeName] = useState('');
   const [nomineePhone, setNomineePhone] = useState('');
   const [nomineeRelation, setNomineeRelation] = useState('Spouse');
@@ -218,6 +222,10 @@ export default function Members() {
     setAadhaarNumber('');
     setOccupation('Tailoring');
     setMonthlyIncome(12000);
+    setStreet('');
+    setVillage('');
+    setDistrict('Madurai');
+    setPincode('625001');
     setNomineeName('');
     setNomineePhone('');
     setNomineeRelation('Spouse');
@@ -271,11 +279,11 @@ export default function Members() {
       phone: cleanPhone,
       aadhaarNumber: cleanAadhaar,
       address: {
-        street: 'N/A',
-        village: 'N/A',
+        street: street || 'N/A',
+        village: village || 'N/A',
         areaName: 'Main Area',
-        district: 'Madurai',
-        pincode: '625001',
+        district: district || 'Madurai',
+        pincode: pincode || '625001',
       },
       occupation,
       monthlyIncome: Number(monthlyIncome),
@@ -1001,6 +1009,54 @@ export default function Members() {
                     <option key={k._id} value={k._id}>{k.name} ({k.meetingDay})</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Address Details Section */}
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2.5">
+                <span className="font-bold text-slate-700 dark:text-slate-200">Residential Address Info</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-slate-400">Street / Door No</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 12/A North Street"
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-slate-400">Village / Town</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Melachathiram"
+                      value={village}
+                      onChange={(e) => setVillage(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-slate-400">District</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Madurai"
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-slate-400">Pincode (6 digits)</label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="e.g. 625001"
+                      value={pincode}
+                      onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="form-input"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Nominee details */}
