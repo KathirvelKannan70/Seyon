@@ -185,19 +185,29 @@ export default function Members() {
           navigate('/kulus');
         }
       } else {
-        const preservedKulu = kuluId;
+        // Full reset — no prefilled values
         setName('');
+        setFatherName('');
+        setGender('Female');
+        setDob('');
+        setAge(0);
         setPhone('');
         setAadhaarNumber('');
+        setOccupation('');
+        setMonthlyIncome(0);
+        setStreet('');
+        setVillage('');
+        setDistrict('');
+        setPincode('');
         setNomineeName('');
         setNomineePhone('');
         setNomineeRelation('Spouse');
-        setOccupation('Tailoring');
-        setMonthlyIncome(12000);
-        setKuluId(preservedKulu);
+        setKuluId('');
+        setKycStatus('pending');
         setFormError(null);
-        setSuccessMessage('Member registered successfully! Add another member below.');
-        setTimeout(() => setSuccessMessage(null), 5000);
+        setPincodeError(null);
+        setSuccessMessage('✅ Member registered! Fill in the next member details.');
+        setTimeout(() => setSuccessMessage(null), 4000);
       }
     },
     onError: (err: any) => setFormError(err.message),
