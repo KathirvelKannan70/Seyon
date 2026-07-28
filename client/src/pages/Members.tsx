@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
+import { capitalizeWords } from '../utils/textUtils';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
   QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle,
@@ -40,8 +41,8 @@ export default function Members() {
   const [occupation, setOccupation] = useState('');
   const [monthlyIncome, setMonthlyIncome] = useState<number>(12000);
   const [fatherName, setFatherName] = useState('');
-  const [dob, setDob] = useState('1992-05-15');
-  const [age, setAge] = useState<number>(32);
+  const [dob, setDob] = useState('');
+  const [age, setAge] = useState<number>(0);
   const [street, setStreet] = useState('');
   const [village, setVillage] = useState('');
   const [district, setDistrict] = useState('Madurai');
@@ -58,18 +59,34 @@ export default function Members() {
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [pincodeError, setPincodeError] = useState<string | null>(null);
 
-  // Auto calculate age when DOB changes
+  // Auto-format DOB as DD/MM/YYYY and calculate age
   const handleDobChange = (val: string) => {
-    setDob(val);
-    if (val) {
-      const birth = new Date(val);
+    // Strip non-digits
+    const digits = val.replace(/\D/g, '').slice(0, 8);
+
+    // Auto-insert slashes at positions 2 and 4
+    let formatted = digits;
+    if (digits.length > 4) {
+      formatted = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+    } else if (digits.length > 2) {
+      formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+    }
+
+    setDob(formatted);
+
+    // Auto-calculate age when 8 digits are entered (DD/MM/YYYY complete)
+    if (digits.length === 8) {
+      const day = parseInt(digits.slice(0, 2), 10);
+      const month = parseInt(digits.slice(2, 4), 10) - 1;
+      const year = parseInt(digits.slice(4, 8), 10);
+      const birth = new Date(year, month, day);
       const today = new Date();
       let calculatedAge = today.getFullYear() - birth.getFullYear();
       const monthDiff = today.getMonth() - birth.getMonth();
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
         calculatedAge--;
       }
-      if (!isNaN(calculatedAge) && calculatedAge > 0) {
+      if (!isNaN(calculatedAge) && calculatedAge > 0 && calculatedAge < 120) {
         setAge(calculatedAge);
       }
     }
@@ -271,8 +288,8 @@ export default function Members() {
     setOccupation('Tailoring');
     setMonthlyIncome(12000);
     setFatherName('');
-    setDob('1992-05-15');
-    setAge(32);
+    setDob('');
+    setAge(0);
     setStreet('');
     setVillage('');
     setDistrict('Madurai');
@@ -325,7 +342,17 @@ export default function Members() {
       name,
       fatherName: fatherName || 'N/A',
       gender,
-      dob: dob ? new Date(dob) : new Date('1990-01-01'),
+      dob: (() => {
+        // Parse DD/MM/YYYY format
+        const digits = dob.replace(/\D/g, '');
+        if (digits.length === 8) {
+          const day = parseInt(digits.slice(0, 2), 10);
+          const month = parseInt(digits.slice(2, 4), 10) - 1;
+          const year = parseInt(digits.slice(4, 8), 10);
+          return new Date(year, month, day);
+        }
+        return new Date('1990-01-01');
+      })(),
       age: Number(age) || 30,
       phone: cleanPhone,
       aadhaarNumber: cleanAadhaar,
@@ -1008,11 +1035,11 @@ export default function Members() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Member Full Name</label>
-                  <input type="text" required placeholder="e.g. Mahalakshmi S" value={name} onChange={(e) => setName(e.target.value)} className="form-input" />
+                  <input type="text" required placeholder="e.g. Mahalakshmi S" value={name} onChange={(e) => setName(capitalizeWords(e.target.value))} className="form-input" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Father / Husband Name</label>
-                  <input type="text" required placeholder="e.g. Subramanian" value={fatherName} onChange={(e) => setFatherName(e.target.value)} className="form-input" />
+                  <input type="text" required placeholder="e.g. Subramanian" value={fatherName} onChange={(e) => setFatherName(capitalizeWords(e.target.value))} className="form-input" />
                 </div>
               </div>
 
@@ -1026,8 +1053,16 @@ export default function Members() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Date of Birth (DOB)</label>
-                  <input type="date" required value={dob} onChange={(e) => handleDobChange(e.target.value)} className="form-input" />
+                  <label className="font-semibold text-slate-400">Date of Birth (DD/MM/YYYY)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={10}
+                    placeholder="DD/MM/YYYY"
+                    value={dob}
+                    onChange={(e) => handleDobChange(e.target.value)}
+                    className="form-input font-mono tracking-widest"
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Age (Years)</label>
@@ -1087,7 +1122,7 @@ export default function Members() {
                       type="text"
                       placeholder="e.g. 12/A North Street"
                       value={street}
-                      onChange={(e) => setStreet(e.target.value)}
+                      onChange={(e) => setStreet(capitalizeWords(e.target.value))}
                       className="form-input"
                     />
                   </div>
@@ -1097,7 +1132,7 @@ export default function Members() {
                       type="text"
                       placeholder="e.g. Melachathiram"
                       value={village}
-                      onChange={(e) => setVillage(e.target.value)}
+                      onChange={(e) => setVillage(capitalizeWords(e.target.value))}
                       className="form-input"
                     />
                   </div>
@@ -1107,7 +1142,7 @@ export default function Members() {
                       type="text"
                       placeholder="e.g. Madurai"
                       value={district}
-                      onChange={(e) => setDistrict(e.target.value)}
+                      onChange={(e) => setDistrict(capitalizeWords(e.target.value))}
                       className="form-input"
                     />
                   </div>
@@ -1156,7 +1191,7 @@ export default function Members() {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="font-semibold text-slate-400">Nominee Name</label>
-                    <input type="text" required placeholder="Name" value={nomineeName} onChange={(e) => setNomineeName(e.target.value)} className="form-input" />
+                    <input type="text" required placeholder="Name" value={nomineeName} onChange={(e) => setNomineeName(capitalizeWords(e.target.value))} className="form-input" />
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="font-semibold text-slate-400">Relation</label>

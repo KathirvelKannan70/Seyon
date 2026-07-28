@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, SERVER_URL } from '../App.tsx';
+import { capitalizeWords } from '../utils/textUtils';
 import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle, UserPlus, Zap } from 'lucide-react';
 
 const schemeEmis: Record<string, number> = {
@@ -477,7 +478,7 @@ export default function Kulus() {
                   required
                   placeholder="e.g. Annai Street Group"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(capitalizeWords(e.target.value))}
                   className="form-input"
                 />
               </div>
