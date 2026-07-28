@@ -17,6 +17,33 @@ export default function Collections() {
   const [day, setDay] = useState(todayDay);
   const [search, setSearch] = useState('');
 
+  // Helper to calculate the exact calendar date of the next collection
+  const getNextCollectionDateStr = (meetingDayName: string) => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const targetDayIndex = dayNames.findIndex(d => d.toLowerCase() === (meetingDayName || '').toLowerCase());
+    
+    if (targetDayIndex === -1) return '';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const currentDayIndex = today.getDay();
+    let daysUntil = targetDayIndex - currentDayIndex;
+
+    if (daysUntil < 0) {
+      daysUntil += 7;
+    }
+
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + daysUntil);
+
+    return nextDate.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
   // Active operations payment states
   const [collectingMember, setCollectingMember] = useState<any>(null);
   const [amountPaid, setAmountPaid] = useState('');
@@ -248,9 +275,24 @@ export default function Collections() {
             <div key={block.kulu._id} className="p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-premium dark:shadow-premium-dark">
               {/* Kulu header */}
               <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/40 pb-3 gap-4">
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-250">{block.kulu.name}</span>
-                  <span className="text-[10px] text-slate-400">Area: {block.kulu.area?.name} • Meeting Day: {block.kulu.meetingDay} ({block.kulu.collectionTime})</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-extrabold text-slate-900 dark:text-slate-100">{block.kulu.name}</span>
+                    {block.kulu.kuluNumber && (
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">
+                        No. {block.kulu.kuluNumber}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                    <span>Area: <strong className="text-slate-700 dark:text-slate-200">{block.kulu.area?.name || 'Unassigned'}</strong></span>
+                    <span>•</span>
+                    <span>Meeting Day: <strong className="text-slate-700 dark:text-slate-200">{block.kulu.meetingDay} ({block.kulu.collectionTime})</strong></span>
+                    <span>•</span>
+                    <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1.5 border border-emerald-500/20 shadow-sm">
+                      <Calendar size={13} /> Next Collection Date: <strong>{getNextCollectionDateStr(block.kulu.meetingDay)}</strong>
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {block.members.some((mItem: any) => mItem.activeEmi && ['pending', 'partial', 'late'].includes(mItem.activeEmi.status)) ? (

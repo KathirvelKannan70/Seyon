@@ -23,6 +23,33 @@ export default function Kulus() {
   const [name, setName] = useState('');
   const [kuluSuccessMsg, setKuluSuccessMsg] = useState<string | null>(null);
 
+  // Helper to calculate next collection date
+  const getNextCollectionDateStr = (meetingDayName: string) => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const targetDayIndex = dayNames.findIndex(d => d.toLowerCase() === (meetingDayName || '').toLowerCase());
+    
+    if (targetDayIndex === -1) return '';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const currentDayIndex = today.getDay();
+    let daysUntil = targetDayIndex - currentDayIndex;
+
+    if (daysUntil < 0) {
+      daysUntil += 7;
+    }
+
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + daysUntil);
+
+    return nextDate.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
   const markPastPaidMutation = useMutation({
     mutationFn: (kuluId?: string) => fetchAPI('/collections/mark-past-paid', 'POST', { kuluId }, token),
     onSuccess: (res) => {
@@ -288,12 +315,16 @@ export default function Kulus() {
 
                 <div className="grid grid-cols-2 gap-2 text-xs py-1 text-slate-500">
                   <div className="flex items-center gap-1.5">
-                    <Calendar size={13} className="text-slate-400" />
-                    <span>{kulu.meetingDay}</span>
+                    <Calendar size={13} className="text-emerald-500" />
+                    <span className="font-bold text-slate-700 dark:text-slate-200">{kulu.meetingDay}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Clock size={13} className="text-slate-400" />
                     <span>{kulu.collectionTime}</span>
+                  </div>
+                  <div className="col-span-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-between shadow-sm">
+                    <span className="flex items-center gap-1"><Calendar size={12} /> Next Collection Date:</span>
+                    <span className="font-extrabold font-mono text-slate-900 dark:text-slate-100">{getNextCollectionDateStr(kulu.meetingDay)}</span>
                   </div>
                   <div className="flex flex-col col-span-2 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-850/50 gap-1 my-1">
                     <div className="flex justify-between text-xs">
