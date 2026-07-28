@@ -264,17 +264,24 @@ export default function Kulus() {
           {kulusData?.data?.map((kulu: any) => (
             <div key={kulu._id} onClick={() => setViewingMembersKulu(kulu)} className="p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col justify-between shadow-premium dark:shadow-premium-dark hover:scale-[1.01] hover:border-brand-500/35 cursor-pointer transition-all">
               <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 bg-brand-500/10 text-brand-500 rounded-xl">
-                      <Users size={16} />
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black font-mono text-base shrink-0 shadow-sm" title={`Centre No: ${kulu.kuluNumber}`}>
+                      {kulu.kuluNumber}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold">{kulu.name}</span>
-                      <span className="text-[10px] font-semibold text-slate-400">#{kulu.kuluNumber} ({kulu.schemeType?.toUpperCase() || '15K'} Scheme)</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-base font-extrabold text-slate-900 dark:text-slate-100">{kulu.name}</span>
+                        <span className="px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">
+                          No. {kulu.kuluNumber}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 mt-0.5">
+                        {kulu.schemeType?.toUpperCase() || '15K'} Scheme
+                      </span>
                     </div>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-md text-[9px] font-extrabold bg-brand-500/10 text-brand-500">
+                  <span className="px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shrink-0">
                     {kulu.area?.name || 'Unassigned Area'}
                   </span>
                 </div>
@@ -288,14 +295,14 @@ export default function Kulus() {
                     <Clock size={13} className="text-slate-400" />
                     <span>{kulu.collectionTime}</span>
                   </div>
-                  <div className="flex flex-col col-span-2 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-850/50 gap-0.5 my-1">
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-slate-450">Kulu Total Portfolio:</span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200">₹{(kulu.totalAmount || 0).toLocaleString()}</span>
+                  <div className="flex flex-col col-span-2 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-850/50 gap-1 my-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400 font-medium">Centre Total Portfolio:</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100">₹{(kulu.totalAmount || 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-[10px]">
-                      <span className="text-slate-450">Weekly Repayment Collection:</span>
-                      <span className="font-bold text-brand-500">₹{(kulu.weeklyRepayment || 0).toLocaleString()}</span>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400 font-medium">Weekly Repayment Collection:</span>
+                      <span className="font-extrabold text-emerald-500">₹{(kulu.weeklyRepayment || 0).toLocaleString()}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 col-span-2">
