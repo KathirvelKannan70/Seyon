@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, SERVER_URL } from '../App.tsx';
 import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -11,6 +12,7 @@ const schemeEmis: Record<string, number> = {
 
 export default function Kulus() {
   const { token } = useAuth();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingKulu, setEditingKulu] = useState<any>(null);
@@ -59,6 +61,12 @@ export default function Kulus() {
     queryKey: ['staff'],
     queryFn: () => fetchAPI('/auth/staff', 'GET', null, token),
   });
+
+  useEffect(() => {
+    if (searchParams.get('add') === 'true' && kulusData?.data) {
+      openAddModal();
+    }
+  }, [searchParams, !!kulusData?.data]);
 
   const { data: membersListData, isLoading: membersLoading } = useQuery({
     queryKey: ['kuluMembers', viewingMembersKulu?._id],

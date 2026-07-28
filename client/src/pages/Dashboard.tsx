@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   Banknote, Calendar, Users, TrendingUp,
-  MapPin, UserCheck, DollarSign, PlusCircle, ArrowUpRight
+  MapPin, UserCheck, DollarSign, PlusCircle, ArrowUpRight, Plus
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -91,12 +91,17 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold tracking-tight">Financial Dashboard</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">Live operational ledger metrics and street group audits.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link to="/collections" className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-brand-500 hover:from-cyan-600 hover:to-brand-600 text-white font-medium text-xs rounded-xl shadow-sm flex items-center gap-1.5 active:scale-95 transition-all">
             <PlusCircle size={15} />
             Collection Desk
           </Link>
+          <Link to="/kulus?add=true" className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium text-xs rounded-xl flex items-center gap-1.5 transition-all">
+            <Plus size={15} />
+            Add Kulu
+          </Link>
           <Link to="/members" className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium text-xs rounded-xl flex items-center gap-1.5 transition-all">
+            <UserCheck size={15} />
             Add Members
           </Link>
         </div>
