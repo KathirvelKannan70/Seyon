@@ -17,6 +17,7 @@ export default function Members() {
   // Filter States
   const [search, setSearch] = useState('');
   const [kuluFilter, setKuluFilter] = useState('');
+  const [kuluNumberFilter, setKuluNumberFilter] = useState('');
 
   // UI States
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
@@ -75,6 +76,19 @@ export default function Members() {
   const { data: kulusData } = useQuery({
     queryKey: ['kulus'],
     queryFn: () => fetchAPI('/kulus', 'GET', null, token),
+  });
+
+  // Extract unique Kulu numbers sorted naturally
+  const uniqueKuluNumbers = (Array.from(
+    new Set(kulusData?.data?.map((k: any) => k.kuluNumber).filter(Boolean) || [])
+  ) as string[]).sort((a: string, b: string) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' }));
+
+  // Filter members by selected Kulu number if specified
+  const filteredAndSortedMembers = sortedMembers.filter((m: any) => {
+    if (kuluNumberFilter && String(m.kulu?.kuluNumber || '') !== String(kuluNumberFilter)) {
+      return false;
+    }
+    return true;
   });
 
   useEffect(() => {
@@ -351,11 +365,21 @@ export default function Members() {
           />
         </div>
         <select
+          value={kuluNumberFilter}
+          onChange={(e) => setKuluNumberFilter(e.target.value)}
+          className="form-input sm:w-44 font-bold"
+        >
+          <option value="">All Kulu #</option>
+          {uniqueKuluNumbers.map((num: string) => (
+            <option key={num} value={num}>Kulu #{num}</option>
+          ))}
+        </select>
+        <select
           value={kuluFilter}
           onChange={(e) => setKuluFilter(e.target.value)}
-          className="form-input sm:w-64"
+          className="form-input sm:w-60"
         >
-          <option value="">All Kulus (Groups)</option>
+          <option value="">All Kulu Names</option>
           {kulusData?.data?.map((kulu: any) => (
             <option key={kulu._id} value={kulu._id}>{kulu.name} ({kulu.meetingDay})</option>
           ))}
@@ -392,7 +416,8 @@ export default function Members() {
                 <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800/40">
                   <th className="p-3.5">#</th>
                   <th className="p-3.5">Member Name</th>
-                  <th className="p-3.5">Assigned Kulu (Group)</th>
+                  <th className="p-3.5 font-bold text-brand-600 dark:text-brand-400">Kulu No</th>
+                  <th className="p-3.5">Kulu Name</th>
                   <th className="p-3.5">Phone Number</th>
                   <th className="p-3.5">Aadhaar No</th>
                   <th className="p-3.5">Nominee Details</th>
@@ -401,14 +426,14 @@ export default function Members() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                {!sortedMembers || sortedMembers.length === 0 ? (
+                {!filteredAndSortedMembers || filteredAndSortedMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
+                    <td colSpan={9} className="p-8 text-center text-slate-400 font-medium">
                       No members found matching your search.
                     </td>
                   </tr>
                 ) : (
-                  sortedMembers.map((member: any, idx: number) => (
+                  filteredAndSortedMembers.map((member: any, idx: number) => (
                     <tr key={member._id} className="hover:bg-slate-50/70 dark:hover:bg-slate-850/50 transition-colors">
                       <td className="p-3.5 font-bold text-slate-400">{idx + 1}</td>
                       <td className="p-3.5">
@@ -424,13 +449,16 @@ export default function Members() {
                         </div>
                       </td>
                       <td className="p-3.5">
-                        {member.kulu ? (
-                          <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 inline-flex items-center gap-1">
-                            👥 {member.kulu.name} {member.kulu.kuluNumber ? `(#${member.kulu.kuluNumber})` : ''}
+                        {member.kulu?.kuluNumber ? (
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 font-mono inline-block">
+                            #{member.kulu.kuluNumber}
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-400 font-semibold">Unassigned</span>
+                          <span className="text-slate-400 font-mono text-xs">-</span>
                         )}
+                      </td>
+                      <td className="p-3.5 font-bold text-slate-700 dark:text-slate-200">
+                        {member.kulu?.name || 'Unassigned'}
                       </td>
                       <td className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">{member.phone || 'N/A'}</td>
                       <td className="p-3.5 font-mono text-slate-500">{member.aadhaarNumber || 'N/A'}</td>

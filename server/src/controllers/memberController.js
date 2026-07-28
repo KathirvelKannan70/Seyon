@@ -79,10 +79,20 @@ export const getMembers = async (req, res, next) => {
     }
 
     if (search) {
+      const matchingKulus = await Kulu.find({
+        $or: [
+          { kuluNumber: { $regex: search, $options: 'i' } },
+          { name: { $regex: search, $options: 'i' } },
+        ],
+      }).select('_id');
+
+      const kuluIds = matchingKulus.map(k => k._id);
+
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
         { phone: { $regex: search, $options: 'i' } },
         { aadhaarNumber: { $regex: search, $options: 'i' } },
+        { kulu: { $in: kuluIds } },
       ];
     }
 
