@@ -211,9 +211,19 @@ export default function Members() {
     const payload = {
       kulu: kuluId,
       name,
+      fatherName: 'N/A',
       gender,
+      dob: new Date('1990-01-01'),
+      age: 30,
       phone: cleanPhone,
       aadhaarNumber: cleanAadhaar,
+      address: {
+        street: 'N/A',
+        village: 'N/A',
+        areaName: 'Main Area',
+        district: 'Madurai',
+        pincode: '625001',
+      },
       occupation,
       monthlyIncome: Number(monthlyIncome),
       nominee: {

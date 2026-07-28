@@ -23,6 +23,7 @@ const memberSchema = new mongoose.Schema(
     },
     fatherName: {
       type: String,
+      default: 'N/A',
       trim: true,
     },
     gender: {
@@ -32,9 +33,11 @@ const memberSchema = new mongoose.Schema(
     },
     dob: {
       type: Date,
+      default: () => new Date('1990-01-01'),
     },
     age: {
       type: Number,
+      default: 30,
     },
     phone: {
       type: String,
@@ -75,11 +78,11 @@ const memberSchema = new mongoose.Schema(
       uppercase: true,
     },
     address: {
-      street: { type: String },
-      village: { type: String },
-      areaName: { type: String },
-      district: { type: String },
-      pincode: { type: String },
+      street: { type: String, default: 'N/A' },
+      village: { type: String, default: 'N/A' },
+      areaName: { type: String, default: 'Main Area' },
+      district: { type: String, default: 'Madurai' },
+      pincode: { type: String, default: '625001' },
     },
     occupation: {
       type: String,
