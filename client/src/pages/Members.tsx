@@ -5,7 +5,7 @@ import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
   QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle,
-  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown
+  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown, Copy
 } from 'lucide-react';
 
 export default function Members() {
@@ -801,27 +801,53 @@ export default function Members() {
               </div>
 
               {/* Nominee details */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-3">
-                <div className="col-span-3 font-bold">Nominee Beneficiary Info</div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Nominee Name</label>
-                  <input type="text" required placeholder="Name" value={nomineeName} onChange={(e) => setNomineeName(e.target.value)} className="form-input" />
+              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2.5">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-slate-700 dark:text-slate-200">Nominee Beneficiary Info</span>
+                  {phone && (
+                    <button
+                      type="button"
+                      onClick={() => setNomineePhone(phone)}
+                      className="text-[10px] px-2.5 py-1 bg-brand-500/10 hover:bg-brand-500/20 text-brand-500 font-bold rounded-lg transition-all flex items-center gap-1"
+                      title="Copy Member Primary Phone to Nominee Phone"
+                    >
+                      <Copy size={11} /> Same Phone as Member
+                    </button>
+                  )}
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Relation</label>
-                  <input type="text" required placeholder="Spouse / Son" value={nomineeRelation} onChange={(e) => setNomineeRelation(e.target.value)} className="form-input" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Phone (10 digits)</label>
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    placeholder="10-digit Phone"
-                    value={nomineePhone}
-                    onChange={(e) => setNomineePhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="form-input"
-                  />
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-slate-400">Nominee Name</label>
+                    <input type="text" required placeholder="Name" value={nomineeName} onChange={(e) => setNomineeName(e.target.value)} className="form-input" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-slate-400">Relation</label>
+                    <select value={nomineeRelation} onChange={(e) => setNomineeRelation(e.target.value)} className="form-input" required>
+                      <option value="Spouse">Spouse</option>
+                      <option value="Husband">Husband</option>
+                      <option value="Wife">Wife</option>
+                      <option value="Son">Son</option>
+                      <option value="Daughter">Daughter</option>
+                      <option value="Father">Father</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Brother">Brother</option>
+                      <option value="Sister">Sister</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-slate-400">Phone (10 digits)</label>
+                    <input
+                      type="tel"
+                      required
+                      maxLength={10}
+                      placeholder="10-digit Phone"
+                      value={nomineePhone}
+                      onChange={(e) => setNomineePhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      className="form-input"
+                    />
+                  </div>
                 </div>
               </div>
 

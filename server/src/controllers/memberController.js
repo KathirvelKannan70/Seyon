@@ -26,9 +26,26 @@ export const createMember = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Assigned Kulu not found' });
     }
 
-    // If address.areaName is missing, fill it from Kulu area name
-    if (!memberData.address) memberData.address = {};
-    memberData.address.areaName = kulu.area?.name || 'Main Area';
+    // Provide defaults for optional fields if omitted
+    if (!memberData.fatherName) memberData.fatherName = 'N/A';
+    if (!memberData.dob) memberData.dob = new Date('1990-01-01');
+    if (!memberData.age) memberData.age = 30;
+
+    if (!memberData.address) {
+      memberData.address = {
+        street: 'N/A',
+        village: 'N/A',
+        areaName: kulu.area?.name || 'Main Area',
+        district: 'N/A',
+        pincode: '625001',
+      };
+    } else {
+      if (!memberData.address.street) memberData.address.street = 'N/A';
+      if (!memberData.address.village) memberData.address.village = 'N/A';
+      if (!memberData.address.district) memberData.address.district = 'N/A';
+      if (!memberData.address.pincode) memberData.address.pincode = '625001';
+      if (!memberData.address.areaName) memberData.address.areaName = kulu.area?.name || 'Main Area';
+    }
 
     const member = await Member.create(memberData);
 
