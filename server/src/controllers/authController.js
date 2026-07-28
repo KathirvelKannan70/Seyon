@@ -6,7 +6,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email, role: user.role },
     process.env.JWT_SECRET || 'seyon_jwt_secret',
-    { expiresIn: '15m' }
+    { expiresIn: '30d' }
   );
 };
 
@@ -14,7 +14,7 @@ const generateRefreshToken = (user) => {
   return jwt.sign(
     { id: user._id },
     process.env.JWT_REFRESH_SECRET || 'seyon_jwt_refresh_secret',
-    { expiresIn: '7d' }
+    { expiresIn: '365d' }
   );
 };
 
@@ -103,18 +103,15 @@ export const refresh = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Refresh token is required' });
     }
 
-    const user = await User.findOne({ refreshToken: token });
-    if (!user) {
-      return res.status(403).json({ success: false, message: 'Invalid refresh token' });
-    }
-
     try {
       const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'seyon_jwt_refresh_secret');
+      const user = await User.findById(decoded.id);
+      if (!user || user.status === 'inactive') {
+        return res.status(403).json({ success: false, message: 'User account inactive or not found' });
+      }
+
       const accessToken = generateAccessToken(user);
       const newRefreshToken = generateRefreshToken(user);
-
-      user.refreshToken = newRefreshToken;
-      await user.save();
 
       res.status(200).json({
         success: true,
