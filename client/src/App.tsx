@@ -47,7 +47,13 @@ export const fetchAPI = async (endpoint: string, method = 'GET', body: any = nul
   }
 
   let response = await fetch(`${API_URL}${endpoint}`, config);
-  let data = await response.json();
+  let text = await response.text();
+  let data: any = {};
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    data = { message: `Server response error (${response.status}): ${response.statusText || 'Unexpected server response'}` };
+  }
 
   // If unauthorized / token expired, try to refresh token silently
   if (response.status === 401 && localStorage.getItem('refresh_token')) {
@@ -57,7 +63,13 @@ export const fetchAPI = async (endpoint: string, method = 'GET', body: any = nul
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: localStorage.getItem('refresh_token') }),
       });
-      const refreshData = await refreshResponse.json();
+      const refreshText = await refreshResponse.text();
+      let refreshData: any = {};
+      try {
+        refreshData = JSON.parse(refreshText);
+      } catch (e) {
+        refreshData = {};
+      }
 
       if (refreshResponse.ok && refreshData.success) {
         localStorage.setItem('access_token', refreshData.accessToken);
@@ -66,7 +78,12 @@ export const fetchAPI = async (endpoint: string, method = 'GET', body: any = nul
         // Retry the original request with the new token
         config.headers['Authorization'] = `Bearer ${refreshData.accessToken}`;
         response = await fetch(`${API_URL}${endpoint}`, config);
-        data = await response.json();
+        text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          data = { message: `Server response error (${response.status})` };
+        }
       } else {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
