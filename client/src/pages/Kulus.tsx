@@ -368,8 +368,8 @@ export default function Kulus() {
 
       {/* Modal Dialog */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 backdrop-blur-sm p-4 flex min-h-full items-center justify-center">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto my-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
             <button onClick={closeModal} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
               <Plus className="rotate-45" size={20} />
             </button>
@@ -566,8 +566,8 @@ export default function Kulus() {
       )}
       {/* Members Directory Modal */}
       {viewingMembersKulu && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 backdrop-blur-sm p-4 flex min-h-full items-center justify-center">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto my-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
             <button onClick={() => setViewingMembersKulu(null)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
               <Plus className="rotate-45" size={20} />
             </button>

@@ -409,8 +409,8 @@ export default function Members() {
 
       {/* Member Details & Ledger Modal */}
       {detailsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 backdrop-blur-sm p-4 flex min-h-full items-center justify-center">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
             <button onClick={() => setDetailsOpen(null)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
               <Plus className="rotate-45" size={20} />
             </button>
@@ -546,8 +546,8 @@ export default function Members() {
 
       {/* Detailed CIBIL Report Modal */}
       {showCibilReport && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/50 backdrop-blur-sm p-4 flex min-h-full items-center justify-center">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto my-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in duration-200">
             <button onClick={() => setShowCibilReport(null)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
               <Plus className="rotate-45" size={20} />
             </button>
@@ -673,8 +673,8 @@ export default function Members() {
 
       {/* Bulk Import Modal */}
       {importOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 backdrop-blur-sm p-4 flex min-h-full items-center justify-center">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative">
             <button onClick={() => { setImportOpen(false); setImportResult(null); }} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
               <Plus className="rotate-45" size={20} />
             </button>
@@ -727,8 +727,8 @@ export default function Members() {
 
       {/* Add Member Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 backdrop-blur-sm p-4 flex min-h-full items-center justify-center">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col gap-4 shadow-2xl relative">
             <button onClick={closeModal} className="absolute right-4 top-4 text-slate-400 hover:text-slate-600">
               <Plus className="rotate-45" size={20} />
             </button>
@@ -1019,8 +1019,8 @@ export default function Members() {
       )}
       {/* Full Customer Profile Page View Modal */}
       {fullProfileMemberId && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col gap-6 relative">
+        <div className="fixed inset-0 z-[80] overflow-y-auto bg-slate-950/70 backdrop-blur-md p-4 flex min-h-full items-center justify-center animate-in fade-in duration-200">
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto my-auto bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col gap-6 relative">
             {/* Close button */}
             <button
               onClick={() => setFullProfileMemberId(null)}
