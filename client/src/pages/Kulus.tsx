@@ -130,18 +130,7 @@ export default function Kulus() {
   const openAddModal = () => {
     setEditingKulu(null);
     setName('');
-    
-    // Auto-calculate sequential Kulu number (1, 2, 3...)
-    const existingKulus = kulusData?.data || [];
-    let maxNum = 0;
-    existingKulus.forEach((k: any) => {
-      const numMatch = String(k.kuluNumber || '').match(/\d+/);
-      if (numMatch) {
-        const val = parseInt(numMatch[0], 10);
-        if (!isNaN(val) && val > maxNum) maxNum = val;
-      }
-    });
-    setKuluNumber(String(maxNum + 1));
+    setKuluNumber('');
     setMeetingDay('Friday');
     setCollectionTime('10:00 AM');
     setAreaId(areasData?.data?.[0]?._id || '');
