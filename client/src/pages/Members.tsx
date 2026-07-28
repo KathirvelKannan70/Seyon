@@ -55,6 +55,8 @@ export default function Members() {
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [saveAction, setSaveAction] = useState<'close' | 'another'>('close');
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeError, setPincodeError] = useState<string | null>(null);
 
   // Auto calculate age when DOB changes
   const handleDobChange = (val: string) => {
@@ -69,6 +71,32 @@ export default function Members() {
       }
       if (!isNaN(calculatedAge) && calculatedAge > 0) {
         setAge(calculatedAge);
+      }
+    }
+  };
+
+  // Auto-fetch district & city from pincode using India Post API
+  const handlePincodeChange = async (val: string) => {
+    const cleaned = val.replace(/\D/g, '').slice(0, 6);
+    setPincode(cleaned);
+    setPincodeError(null);
+
+    if (cleaned.length === 6) {
+      setPincodeLoading(true);
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
+        const data = await res.json();
+        if (data?.[0]?.Status === 'Success' && data[0].PostOffice?.length > 0) {
+          const po = data[0].PostOffice[0];
+          setDistrict(po.District || '');
+          setVillage(po.Name || '');
+        } else {
+          setPincodeError('Invalid pincode — please enter manually.');
+        }
+      } catch {
+        setPincodeError('Failed to fetch. Please fill district/city manually.');
+      } finally {
+        setPincodeLoading(false);
       }
     }
   };
@@ -1083,16 +1111,28 @@ export default function Members() {
                       className="form-input"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-semibold text-slate-400">Pincode (6 digits)</label>
+                  <div className="flex flex-col gap-1 col-span-2">
+                    <label className="font-semibold text-slate-400 flex items-center gap-1.5">
+                      Pincode (6 digits)
+                      {pincodeLoading && (
+                        <span className="text-[10px] text-brand-400 font-bold animate-pulse flex items-center gap-1">
+                          ⟳ Fetching location...
+                        </span>
+                      )}
+                    </label>
                     <input
                       type="text"
                       maxLength={6}
-                      placeholder="e.g. 625001"
+                      placeholder="Enter 6-digit pincode to auto-fill district & city"
                       value={pincode}
-                      onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      className="form-input"
+                      onChange={(e) => handlePincodeChange(e.target.value)}
+                      className={`form-input ${pincodeLoading ? 'opacity-60' : ''}`}
                     />
+                    {pincodeError && (
+                      <span className="text-[10px] text-rose-500 font-bold flex items-center gap-1">
+                        ⚠ {pincodeError}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
