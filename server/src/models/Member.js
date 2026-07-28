@@ -23,7 +23,6 @@ const memberSchema = new mongoose.Schema(
     },
     fatherName: {
       type: String,
-      required: [true, "Father's name is required"],
       trim: true,
     },
     gender: {
@@ -33,11 +32,9 @@ const memberSchema = new mongoose.Schema(
     },
     dob: {
       type: Date,
-      required: true,
     },
     age: {
       type: Number,
-      required: true,
     },
     phone: {
       type: String,
@@ -78,11 +75,11 @@ const memberSchema = new mongoose.Schema(
       uppercase: true,
     },
     address: {
-      street: { type: String, required: true },
-      village: { type: String, required: true },
-      areaName: { type: String, required: true }, // name of Area
-      district: { type: String, required: true },
-      pincode: { type: String, required: true },
+      street: { type: String },
+      village: { type: String },
+      areaName: { type: String },
+      district: { type: String },
+      pincode: { type: String },
     },
     occupation: {
       type: String,

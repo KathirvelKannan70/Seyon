@@ -32,26 +32,16 @@ export default function Members() {
 
   // Form States
   const [name, setName] = useState('');
-  const [fatherName, setFatherName] = useState('');
   const [gender, setGender] = useState('Female');
-  const [dob, setDob] = useState('');
-  const [age, setAge] = useState<number>(30);
   const [phone, setPhone] = useState('');
-  const [alternatePhone, setAlternatePhone] = useState('');
   const [aadhaarNumber, setAadhaarNumber] = useState('');
-  const [pan, setPan] = useState('');
-  const [street, setStreet] = useState('');
-  const [village, setVillage] = useState('');
-  const [district, setDistrict] = useState('');
-  const [pincode, setPincode] = useState('');
   const [occupation, setOccupation] = useState('');
   const [monthlyIncome, setMonthlyIncome] = useState<number>(12000);
   const [nomineeName, setNomineeName] = useState('');
   const [nomineePhone, setNomineePhone] = useState('');
-  const [nomineeRelation, setNomineeRelation] = useState('');
+  const [nomineeRelation, setNomineeRelation] = useState('Spouse');
   const [kuluId, setKuluId] = useState('');
   const [kycStatus, setKycStatus] = useState('pending');
-  const [gps, setGps] = useState<{ latitude: number; longitude: number } | null>(null);
   
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -168,39 +158,12 @@ export default function Members() {
   });
 
 
-  // Get GPS Location
-  const captureGPS = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setGps({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        () => {
-          alert('GPS capture failed. Please grant browser permissions.');
-        }
-      );
-    } else {
-      alert('Geolocation not supported by this browser.');
-    }
-  };
 
   const openAddModal = () => {
     setName('');
-    setFatherName('');
     setGender('Female');
-    setDob('');
-    setAge(30);
     setPhone('');
-    setAlternatePhone('');
     setAadhaarNumber('');
-    setPan('');
-    setStreet('');
-    setVillage('');
-    setDistrict('Madurai');
-    setPincode('625001');
     setOccupation('Tailoring');
     setMonthlyIncome(12000);
     setNomineeName('');
@@ -208,27 +171,12 @@ export default function Members() {
     setNomineeRelation('Spouse');
     setKuluId(kulusData?.data?.[0]?._id || '');
     setKycStatus('pending');
-    setGps(null);
     setFormError(null);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
-  };
-
-  const handleDobChange = (dateVal: string) => {
-    setDob(dateVal);
-    if (dateVal) {
-      const birthDate = new Date(dateVal);
-      const today = new Date();
-      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        calculatedAge--;
-      }
-      setAge(calculatedAge > 0 ? calculatedAge : 0);
-    }
   };
 
   const duplicateAadhaarMember = aadhaarNumber.length === 12
@@ -240,16 +188,11 @@ export default function Members() {
     setFormError(null);
 
     const cleanPhone = phone.replace(/\D/g, '');
-    const cleanAltPhone = alternatePhone.replace(/\D/g, '');
     const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
     const cleanNomineePhone = nomineePhone.replace(/\D/g, '');
 
     if (cleanPhone.length !== 10) {
       setFormError('Primary phone number must be exactly 10 digits.');
-      return;
-    }
-    if (cleanAltPhone && cleanAltPhone.length !== 10) {
-      setFormError('Alternate phone number must be exactly 10 digits.');
       return;
     }
     if (cleanAadhaar.length !== 12) {
@@ -268,21 +211,9 @@ export default function Members() {
     const payload = {
       kulu: kuluId,
       name,
-      fatherName,
       gender,
-      dob: new Date(dob),
-      age: Number(age),
       phone: cleanPhone,
-      alternatePhone: cleanAltPhone,
       aadhaarNumber: cleanAadhaar,
-      pan,
-      address: {
-        street,
-        village,
-        areaName: 'AutoFill',
-        district,
-        pincode,
-      },
       occupation,
       monthlyIncome: Number(monthlyIncome),
       nominee: {
@@ -291,7 +222,6 @@ export default function Members() {
         relation: nomineeRelation,
       },
       kycStatus,
-      gpsLocation: gps || { latitude: 0, longitude: 0 },
     };
 
     createMutation.mutate(payload);
@@ -493,23 +423,19 @@ export default function Members() {
               </div>
               <div className="flex flex-col justify-center">
                 <span className="text-sm font-bold">{detailsOpen.name}</span>
-                <span className="text-xs text-slate-500">Father's Name: {detailsOpen.fatherName}</span>
+                {detailsOpen.fatherName && <span className="text-xs text-slate-500">Father's Name: {detailsOpen.fatherName}</span>}
                 <span className="text-xs text-slate-500">KYC Status: <strong className="uppercase">{detailsOpen.kycStatus}</strong></span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 dark:text-slate-400">
-              <div><strong>Age / Gender:</strong> {detailsOpen.age} yrs / {detailsOpen.gender}</div>
+              <div><strong>Gender:</strong> {detailsOpen.gender}</div>
               <div><strong>Occupation:</strong> {detailsOpen.occupation}</div>
               <div><strong>Nominee Name:</strong> {detailsOpen.nominee?.name} ({detailsOpen.nominee?.relation})</div>
               <div><strong>Nominee Phone:</strong> {detailsOpen.nominee?.phone}</div>
-              <div className="col-span-2">
-                <strong>Address:</strong> {detailsOpen.address?.street}, {detailsOpen.address?.village}, {detailsOpen.address?.district} - {detailsOpen.address?.pincode}
-              </div>
-              {detailsOpen.gpsLocation?.latitude !== 0 && (
-                <div className="col-span-2 flex items-center gap-1 text-[10px] text-brand-500">
-                  <MapPin size={12} />
-                  <span>GPS Logged: {detailsOpen.gpsLocation?.latitude?.toFixed(4)}, {detailsOpen.gpsLocation?.longitude?.toFixed(4)}</span>
+              {detailsOpen.address?.street && (
+                <div className="col-span-2">
+                  <strong>Address:</strong> {detailsOpen.address?.street}, {detailsOpen.address?.village}, {detailsOpen.address?.district} - {detailsOpen.address?.pincode}
                 </div>
               )}
             </div>
@@ -823,33 +749,12 @@ export default function Members() {
                   <input type="text" required placeholder="e.g. Mahalakshmi S" value={name} onChange={(e) => setName(e.target.value)} className="form-input" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Father's Name</label>
-                  <input type="text" required placeholder="e.g. Subramanian" value={fatherName} onChange={(e) => setFatherName(e.target.value)} className="form-input" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Gender</label>
                   <select value={gender} onChange={(e) => setGender(e.target.value)} className="form-input">
                     <option value="Female">Female</option>
                     <option value="Male">Male</option>
                     <option value="Other">Other</option>
                   </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Date of Birth</label>
-                  <input type="date" required value={dob} onChange={(e) => handleDobChange(e.target.value)} className="form-input" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Age (Auto-calculated)</label>
-                  <input
-                    type="number"
-                    required
-                    value={age}
-                    onChange={(e) => setAge(Number(e.target.value))}
-                    className="form-input font-bold text-brand-600 dark:text-brand-400"
-                  />
                 </div>
               </div>
 
@@ -867,20 +772,6 @@ export default function Members() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Alternate Phone (10 digits)</label>
-                  <input
-                    type="tel"
-                    maxLength={10}
-                    placeholder="e.g. 9876543211"
-                    value={alternatePhone}
-                    onChange={(e) => setAlternatePhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Aadhaar (12 digits)</label>
                   <input
                     type="text"
@@ -897,10 +788,6 @@ export default function Members() {
                     </span>
                   )}
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">PAN Card</label>
-                  <input type="text" placeholder="e.g. ABCDE1234F" value={pan} onChange={(e) => setPan(e.target.value)} className="form-input uppercase" />
-                </div>
               </div>
 
               <div className="flex flex-col gap-1">
@@ -911,44 +798,6 @@ export default function Members() {
                     <option key={k._id} value={k._id}>{k.name} ({k.meetingDay})</option>
                   ))}
                 </select>
-              </div>
-
-
-              {/* GPS Geolocation API */}
-              <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-bold">Locality GPS Coordinates</span>
-                  <span className="text-[10px] text-slate-400">
-                    {gps ? `Lat: ${gps.latitude.toFixed(5)}, Lng: ${gps.longitude.toFixed(5)}` : 'GPS Tag Pending'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={captureGPS}
-                  className="px-3 py-1.5 bg-brand-500/10 text-brand-500 rounded-lg hover:bg-brand-500/20 font-bold flex items-center gap-1"
-                >
-                  <MapPinned size={12} /> Log GPS
-                </button>
-              </div>
-
-              {/* Address details */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Street / Door No</label>
-                  <input type="text" required placeholder="e.g. 10B Nehru St" value={street} onChange={(e) => setStreet(e.target.value)} className="form-input" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Village / Town</label>
-                  <input type="text" required placeholder="e.g. Sellur" value={village} onChange={(e) => setVillage(e.target.value)} className="form-input" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">District</label>
-                  <input type="text" required value={district} onChange={(e) => setDistrict(e.target.value)} className="form-input" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-400">Pincode</label>
-                  <input type="text" required placeholder="625002" value={pincode} onChange={(e) => setPincode(e.target.value)} className="form-input" />
-                </div>
               </div>
 
               {/* Nominee details */}
@@ -1275,13 +1124,9 @@ export default function Members() {
                         </h3>
                         <div className="grid grid-cols-2 gap-2.5 text-xs text-slate-600 dark:text-slate-300">
                           <div><span className="text-slate-400 font-normal">Full Name:</span> <br /><strong>{m.name}</strong></div>
-                          <div><span className="text-slate-400 font-normal">Father's Name:</span> <br /><strong>{m.fatherName}</strong></div>
-                          <div><span className="text-slate-400 font-normal">Gender / Age:</span> <br /><strong>{m.gender} • {m.age} yrs</strong></div>
-                          <div><span className="text-slate-400 font-normal">DOB:</span> <br /><strong>{m.dob ? new Date(m.dob).toLocaleDateString() : 'N/A'}</strong></div>
+                          <div><span className="text-slate-400 font-normal">Gender:</span> <br /><strong>{m.gender}</strong></div>
                           <div><span className="text-slate-400 font-normal">Primary Phone:</span> <br /><strong>{m.phone}</strong></div>
-                          <div><span className="text-slate-400 font-normal">Alt Phone:</span> <br /><strong>{m.alternatePhone || 'N/A'}</strong></div>
                           <div><span className="text-slate-400 font-normal">Aadhaar No:</span> <br /><strong className="text-brand-500">{m.aadhaarNumber}</strong></div>
-                          <div><span className="text-slate-400 font-normal">PAN Card:</span> <br /><strong>{m.pan || 'N/A'}</strong></div>
                           <div><span className="text-slate-400 font-normal">Occupation:</span> <br /><strong>{m.occupation}</strong></div>
                           <div><span className="text-slate-400 font-normal">Monthly Income:</span> <br /><strong className="text-emerald-500">₹{m.monthlyIncome?.toLocaleString()}</strong></div>
                         </div>
@@ -1291,14 +1136,16 @@ export default function Members() {
                       <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-2xl flex flex-col gap-3 shadow-sm justify-between">
                         <div className="flex flex-col gap-3">
                           <h3 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 border-b border-slate-100 dark:border-slate-800 pb-2">
-                            Group (Kulu) & Address Details
+                            Group (Kulu) Information
                           </h3>
                           <div className="grid grid-cols-2 gap-2.5 text-xs text-slate-600 dark:text-slate-300">
                             <div><span className="text-slate-400 font-normal">Kulu Group:</span> <br /><strong className="text-brand-500">{m.kulu?.name || 'Unassigned'}</strong></div>
                             <div><span className="text-slate-400 font-normal">Kulu Meeting Day:</span> <br /><strong>{m.kulu?.meetingDay || 'N/A'}</strong></div>
                             <div><span className="text-slate-400 font-normal">Area Segment:</span> <br /><strong>{m.kulu?.area?.name || m.address?.areaName || 'N/A'}</strong></div>
                             <div><span className="text-slate-400 font-normal">Field Officer:</span> <br /><strong>{m.kulu?.fieldOfficer?.name || 'Assigned Officer'}</strong></div>
-                            <div className="col-span-2 mt-1"><span className="text-slate-400 font-normal">Full Address:</span> <br /><strong>{m.address?.street}, {m.address?.village}, {m.address?.district} - {m.address?.pincode}</strong></div>
+                            {m.address?.street && (
+                              <div className="col-span-2 mt-1"><span className="text-slate-400 font-normal">Full Address:</span> <br /><strong>{m.address?.street}, {m.address?.village}, {m.address?.district} - {m.address?.pincode}</strong></div>
+                            )}
                           </div>
                         </div>
 
