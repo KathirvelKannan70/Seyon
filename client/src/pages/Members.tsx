@@ -5,7 +5,7 @@ import { useAuth, fetchAPI, API_URL, SERVER_URL } from '../App.tsx';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
   QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle,
-  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown, Copy
+  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown, Copy, CheckCircle
 } from 'lucide-react';
 
 export default function Members() {
@@ -44,6 +44,8 @@ export default function Members() {
   const [kycStatus, setKycStatus] = useState('pending');
   
   const [formError, setFormError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [saveAction, setSaveAction] = useState<'close' | 'another'>('close');
 
   // Bulk Import State
   const [bulkJson, setBulkJson] = useState('');
@@ -77,7 +79,28 @@ export default function Members() {
     mutationFn: (newMember: any) => fetchAPI('/members', 'POST', newMember, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['members'] });
-      closeModal();
+      queryClient.invalidateQueries({ queryKey: ['kulus'] });
+
+      if (saveAction === 'close') {
+        closeModal();
+        if (searchParams.get('fromKulu') === 'true') {
+          navigate('/kulus');
+        }
+      } else {
+        const preservedKulu = kuluId;
+        setName('');
+        setPhone('');
+        setAadhaarNumber('');
+        setNomineeName('');
+        setNomineePhone('');
+        setNomineeRelation('Spouse');
+        setOccupation('Tailoring');
+        setMonthlyIncome(12000);
+        setKuluId(preservedKulu);
+        setFormError(null);
+        setSuccessMessage('Member registered successfully! Add another member below.');
+        setTimeout(() => setSuccessMessage(null), 5000);
+      }
     },
     onError: (err: any) => setFormError(err.message),
   });
@@ -172,6 +195,7 @@ export default function Members() {
     setKuluId(kulusData?.data?.[0]?._id || '');
     setKycStatus('pending');
     setFormError(null);
+    setSuccessMessage(null);
     setModalOpen(true);
   };
 
@@ -745,6 +769,13 @@ export default function Members() {
 
             <h3 className="text-base font-bold">Register New Microfinance Member</h3>
 
+            {successMessage && (
+              <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs border border-emerald-500/20 rounded-xl flex items-center gap-2 animate-in fade-in duration-150">
+                <CheckCircle size={15} />
+                <span>{successMessage}</span>
+              </div>
+            )}
+
             {formError && (
               <div className="p-3 bg-rose-500/10 text-rose-400 text-xs border border-rose-500/20 rounded-xl flex items-center gap-2">
                 <AlertTriangle size={15} />
@@ -872,14 +903,27 @@ export default function Members() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={createMutation.isPending}
-                className="w-full py-3 mt-2 bg-gradient-to-r from-cyan-500 to-brand-500 hover:from-cyan-600 hover:to-brand-600 text-white font-semibold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
-              >
-                <UserCheck size={14} />
-                Register Member Accounts
-              </button>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <button
+                  type="submit"
+                  onClick={() => setSaveAction('close')}
+                  disabled={createMutation.isPending}
+                  className="py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  <UserCheck size={14} />
+                  Save & Close
+                </button>
+
+                <button
+                  type="submit"
+                  onClick={() => setSaveAction('another')}
+                  disabled={createMutation.isPending}
+                  className="py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  <Plus size={14} />
+                  Save & Add Another
+                </button>
+              </div>
             </form>
           </div>
         </div>

@@ -355,7 +355,7 @@ export default function Kulus() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/members?kuluId=${kulu._id}&add=true`);
+                  navigate(`/members?kuluId=${kulu._id}&add=true&fromKulu=true`);
                 }}
                 className="w-full mt-3 py-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
               >
@@ -577,7 +577,7 @@ export default function Kulus() {
                 <p className="text-xs text-slate-450">Showing all registered self-help group members and profiles.</p>
               </div>
               <button
-                onClick={() => navigate(`/members?kuluId=${viewingMembersKulu._id}&add=true`)}
+                onClick={() => navigate(`/members?kuluId=${viewingMembersKulu._id}&add=true&fromKulu=true`)}
                 className="px-3.5 py-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 active:scale-95 transition-all"
               >
                 <UserPlus size={14} /> Add Member
@@ -592,7 +592,7 @@ export default function Kulus() {
               <div className="flex flex-col items-center justify-center py-8 gap-3">
                 <p className="text-slate-400 text-xs">No members enrolled in this Kulu yet.</p>
                 <button
-                  onClick={() => navigate(`/members?kuluId=${viewingMembersKulu._id}&add=true`)}
+                  onClick={() => navigate(`/members?kuluId=${viewingMembersKulu._id}&add=true&fromKulu=true`)}
                   className="px-4 py-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
                 >
                   <UserPlus size={15} /> Add First Member to {viewingMembersKulu.name}
