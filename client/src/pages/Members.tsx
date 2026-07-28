@@ -52,11 +52,6 @@ export default function Members() {
   const [kycStatus, setKycStatus] = useState('pending');
   const [gps, setGps] = useState<{ latitude: number; longitude: number } | null>(null);
   
-  // Files Upload States
-  const [photoUrl, setPhotoUrl] = useState('');
-  const [sigUrl, setSigUrl] = useState('');
-  const [aadhaarUrl, setAadhaarUrl] = useState('');
-  const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Bulk Import State
@@ -159,36 +154,6 @@ export default function Members() {
     onError: (err: any) => alert('CIBIL check failed: ' + err.message),
   });
 
-  // File Upload Helper
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'photo' | 'signature' | 'aadhaar') => {
-    if (!e.target.files?.[0]) return;
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('file', e.target.files[0]);
-
-    try {
-      const response = await fetch(`${API_URL}/members/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-      const resData = await response.json();
-      if (resData.success) {
-        if (type === 'photo') setPhotoUrl(resData.url);
-        else if (type === 'aadhaar') setAadhaarUrl(resData.url);
-        else setSigUrl(resData.url);
-      } else {
-        alert('Upload failed: ' + resData.message);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error uploading file');
-    } finally {
-      setUploading(false);
-    }
-  };
 
   // Get GPS Location
   const captureGPS = () => {
@@ -230,9 +195,6 @@ export default function Members() {
     setNomineeRelation('Spouse');
     setKuluId(kulusData?.data?.[0]?._id || '');
     setKycStatus('pending');
-    setPhotoUrl('');
-    setSigUrl('');
-    setAadhaarUrl('');
     setGps(null);
     setFormError(null);
     setModalOpen(true);
@@ -292,8 +254,6 @@ export default function Members() {
 
     const payload = {
       kulu: kuluId,
-      photo: photoUrl,
-      aadhaarPhoto: aadhaarUrl,
       name,
       fatherName,
       gender,
@@ -940,21 +900,6 @@ export default function Members() {
                 </select>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2">
-                <span className="font-bold">Member Documents Upload</span>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] text-slate-400">Profile Photo</span>
-                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'photo')} className="text-[10px]" />
-                    {photoUrl && <span className="text-emerald-500 text-[10px]">Photo Uploaded!</span>}
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] text-slate-400">Aadhaar Card Photo</span>
-                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'aadhaar')} className="text-[10px]" />
-                    {aadhaarUrl && <span className="text-emerald-500 text-[10px]">Aadhaar Uploaded!</span>}
-                  </div>
-                </div>
-              </div>
 
               {/* GPS Geolocation API */}
               <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -1031,7 +976,7 @@ export default function Members() {
 
               <button
                 type="submit"
-                disabled={createMutation.isPending || uploading}
+                disabled={createMutation.isPending}
                 className="w-full py-3 mt-2 bg-gradient-to-r from-cyan-500 to-brand-500 hover:from-cyan-600 hover:to-brand-600 text-white font-semibold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
               >
                 <UserCheck size={14} />
