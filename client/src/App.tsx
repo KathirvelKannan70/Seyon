@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   LayoutDashboard, MapPin, Users, Landmark, Banknote, FileSpreadsheet,
@@ -147,6 +147,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
 
   const menuItems = [
@@ -206,14 +207,19 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <nav className="flex flex-col gap-1.5 p-4 overflow-y-auto h-full pb-20">
             {allowedMenu.map((item) => {
               const Icon = item.icon;
+              const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.name}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+                  }`}
                 >
-                  <Icon size={18} className="text-slate-500" />
+                  <Icon size={17} className={isActive ? 'text-white' : 'text-slate-400 dark:text-slate-400'} />
                   {item.name}
                 </Link>
               );
