@@ -39,6 +39,9 @@ export default function Members() {
   const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [occupation, setOccupation] = useState('');
   const [monthlyIncome, setMonthlyIncome] = useState<number>(12000);
+  const [fatherName, setFatherName] = useState('');
+  const [dob, setDob] = useState('1992-05-15');
+  const [age, setAge] = useState<number>(32);
   const [street, setStreet] = useState('');
   const [village, setVillage] = useState('');
   const [district, setDistrict] = useState('Madurai');
@@ -52,6 +55,23 @@ export default function Members() {
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [saveAction, setSaveAction] = useState<'close' | 'another'>('close');
+
+  // Auto calculate age when DOB changes
+  const handleDobChange = (val: string) => {
+    setDob(val);
+    if (val) {
+      const birth = new Date(val);
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        calculatedAge--;
+      }
+      if (!isNaN(calculatedAge) && calculatedAge > 0) {
+        setAge(calculatedAge);
+      }
+    }
+  };
 
   // Bulk Import State
   const [bulkJson, setBulkJson] = useState('');
@@ -222,6 +242,9 @@ export default function Members() {
     setAadhaarNumber('');
     setOccupation('Tailoring');
     setMonthlyIncome(12000);
+    setFatherName('');
+    setDob('1992-05-15');
+    setAge(32);
     setStreet('');
     setVillage('');
     setDistrict('Madurai');
@@ -272,10 +295,10 @@ export default function Members() {
     const payload = {
       kulu: kuluId,
       name,
-      fatherName: 'N/A',
+      fatherName: fatherName || 'N/A',
       gender,
-      dob: new Date('1990-01-01'),
-      age: 30,
+      dob: dob ? new Date(dob) : new Date('1990-01-01'),
+      age: Number(age) || 30,
       phone: cleanPhone,
       aadhaarNumber: cleanAadhaar,
       address: {
@@ -960,12 +983,27 @@ export default function Members() {
                   <input type="text" required placeholder="e.g. Mahalakshmi S" value={name} onChange={(e) => setName(e.target.value)} className="form-input" />
                 </div>
                 <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-400">Father / Husband Name</label>
+                  <input type="text" required placeholder="e.g. Subramanian" value={fatherName} onChange={(e) => setFatherName(e.target.value)} className="form-input" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Gender</label>
                   <select value={gender} onChange={(e) => setGender(e.target.value)} className="form-input">
                     <option value="Female">Female</option>
                     <option value="Male">Male</option>
                     <option value="Other">Other</option>
                   </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-400">Date of Birth (DOB)</label>
+                  <input type="date" required value={dob} onChange={(e) => handleDobChange(e.target.value)} className="form-input" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-400">Age (Years)</label>
+                  <input type="number" required min={18} max={95} value={age} onChange={(e) => setAge(Number(e.target.value))} className="form-input font-bold" />
                 </div>
               </div>
 
