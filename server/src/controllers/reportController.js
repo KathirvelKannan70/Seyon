@@ -123,6 +123,24 @@ export const exportReportExcel = async (req, res, next) => {
         csvContent += `"${i.loanNumber}","${i.member?.name || ''}","${i.member?.phone || ''}","${i.scheme?.name || ''}",${i.weeklyEMI},${i.remainingAmount}\n`;
       });
 
+    } else if (type === 'kulus' || type === 'centres') {
+      filename = 'centres_report.csv';
+      const items = await Kulu.find()
+        .populate('area', 'name code')
+        .populate('fieldOfficer', 'name phone')
+        .populate('incharge', 'name phone');
+
+      items.sort((a, b) => {
+        const numA = String(a.kuluNumber || '').trim();
+        const numB = String(b.kuluNumber || '').trim();
+        return numA.localeCompare(numB, undefined, { numeric: true, sensitivity: 'base' });
+      });
+
+      csvContent = '\uFEFF' + 'Centre No,Centre Name,Scheme,Area,Meeting Day,Collection Time,Field Officer,Group Incharge,Status,Notes\n';
+      items.forEach(i => {
+        csvContent += `"${i.kuluNumber}","${i.name}","${(i.schemeType || '15k').toUpperCase()} Scheme","${i.area?.name || ''}","${i.meetingDay}","${i.collectionTime}","${i.fieldOfficer?.name || ''}","${i.incharge?.name || ''}","${i.status}","${(i.notes || '').replace(/"/g, '""')}"\n`;
+      });
+
     } else {
       return res.status(400).json({ success: false, message: 'Invalid report type' });
     }
