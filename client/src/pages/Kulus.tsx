@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, fetchAPI, SERVER_URL } from '../App.tsx';
 import { capitalizeWords } from '../utils/textUtils';
-import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle, UserPlus, Zap } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Calendar, Clock, User, AlertTriangle, CheckCircle, UserPlus, Zap, Search, FileSpreadsheet, X } from 'lucide-react';
 
 const schemeEmis: Record<string, number> = {
   '10k': 800,
@@ -258,20 +258,146 @@ export default function Kulus() {
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+  // Search & Sequential Sort State
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Sort centres strictly in sequential order by Kulu / Centre Number (1, 2, 3, ... 10, 11...)
+  const sortedKulus = (kulusData?.data || []).slice().sort((a: any, b: any) => {
+    const numA = String(a.kuluNumber || '').trim();
+    const numB = String(b.kuluNumber || '').trim();
+    return numA.localeCompare(numB, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+  // Filter centres live based on search term
+  const filteredKulus = sortedKulus.filter((kulu: any) => {
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase().trim();
+    const kuluNumStr = `no. ${kulu.kuluNumber} #${kulu.kuluNumber} ${kulu.kuluNumber}`.toLowerCase();
+    const nameStr = (kulu.name || '').toLowerCase();
+    const areaStr = (kulu.area?.name || '').toLowerCase();
+    const officerStr = (kulu.fieldOfficer?.name || '').toLowerCase();
+    const inchargeStr = (kulu.incharge?.name || '').toLowerCase();
+    const schemeStr = (kulu.schemeType || '').toLowerCase();
+    const meetingDayStr = (kulu.meetingDay || '').toLowerCase();
+
+    return (
+      kuluNumStr.includes(q) ||
+      nameStr.includes(q) ||
+      areaStr.includes(q) ||
+      officerStr.includes(q) ||
+      inchargeStr.includes(q) ||
+      schemeStr.includes(q) ||
+      meetingDayStr.includes(q)
+    );
+  });
+
+  // Export Centres to Excel CSV format
+  const handleExportExcel = () => {
+    const dataToExport = filteredKulus.length > 0 ? filteredKulus : sortedKulus;
+    if (!dataToExport || dataToExport.length === 0) {
+      alert('No centres data available to export.');
+      return;
+    }
+
+    const headers = [
+      'Centre No',
+      'Centre Name',
+      'Scheme',
+      'Area / Division',
+      'Meeting Day',
+      'Collection Time',
+      'Next Collection Date',
+      'Total Portfolio (INR)',
+      'Weekly Repayment Collection (INR)',
+      'Members Count',
+      'Field Officer',
+      'Group Incharge',
+      'Start Date',
+      'Notes / Remarks'
+    ];
+
+    const rows = dataToExport.map((k: any) => [
+      `"${k.kuluNumber || ''}"`,
+      `"${(k.name || '').replace(/"/g, '""')}"`,
+      `"${(k.schemeType || '15k').toUpperCase()} Scheme"`,
+      `"${(k.area?.name || 'Unassigned Area').replace(/"/g, '""')}"`,
+      `"${k.meetingDay || ''}"`,
+      `"${k.collectionTime || ''}"`,
+      `"${getNextCollectionDateStr(k.meetingDay)}"`,
+      k.totalAmount || 0,
+      k.weeklyRepayment || 0,
+      k.memberCount || 0,
+      `"${(k.fieldOfficer?.name || 'None').replace(/"/g, '""')}"`,
+      `"${(k.incharge?.name || 'None Assigned').replace(/"/g, '""')}"`,
+      `"${k.startDate ? new Date(k.startDate).toLocaleDateString('en-IN') : ''}"`,
+      `"${(k.notes || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Centres_List_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Centres (Street Groups)</h1>
           <p className="text-xs text-slate-500">Configure self-help groups, weekday schedule, and field officer duties.</p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-brand-500 hover:from-cyan-600 hover:to-brand-600 text-white font-medium text-xs rounded-xl shadow-sm flex items-center gap-1.5 active:scale-95 transition-all"
-        >
-          <Plus size={15} />
-          Create Centre
-        </button>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <button
+            onClick={handleExportExcel}
+            className="px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-xs rounded-xl border border-emerald-500/30 shadow-sm flex items-center gap-1.5 active:scale-95 transition-all shrink-0"
+            title="Export Centres List to Excel"
+          >
+            <FileSpreadsheet size={15} />
+            Export Excel
+          </button>
+          <button
+            onClick={openAddModal}
+            className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-brand-500 hover:from-cyan-600 hover:to-brand-600 text-white font-medium text-xs rounded-xl shadow-sm flex items-center gap-1.5 active:scale-95 transition-all shrink-0"
+          >
+            <Plus size={15} />
+            Create Centre
+          </button>
+        </div>
+      </div>
+
+      {/* Search Bar & Sequential Sort Status */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-2.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl shadow-sm">
+        <div className="relative w-full sm:flex-1">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search centres by kulu number, name, area, officer, or meeting day..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 transition-colors"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 px-2 shrink-0 self-end sm:self-center">
+          <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold rounded-lg text-[11px] border border-emerald-500/20 font-mono">
+            Sorted: Kulu No. Sequential (1, 2, 3...)
+          </span>
+          <span className="text-[11px] font-semibold text-slate-500">
+            ({filteredKulus.length} {filteredKulus.length === 1 ? 'centre' : 'centres'})
+          </span>
+        </div>
       </div>
 
       {kuluSuccessMsg && (
@@ -287,9 +413,20 @@ export default function Kulus() {
             <div key={i} className="h-44 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl" />
           ))}
         </div>
+      ) : filteredKulus.length === 0 ? (
+        <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col items-center justify-center gap-3">
+          <Search size={32} className="text-slate-300 dark:text-slate-700" />
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">No centres found matching "{searchTerm}"</p>
+          <button
+            onClick={() => setSearchTerm('')}
+            className="px-3.5 py-1.5 text-xs font-bold text-brand-500 hover:text-brand-600 bg-brand-500/10 rounded-xl transition-colors"
+          >
+            Clear Search Filter
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {kulusData?.data?.map((kulu: any) => (
+          {filteredKulus.map((kulu: any) => (
             <div key={kulu._id} onClick={() => setViewingMembersKulu(kulu)} className="p-6 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl flex flex-col justify-between shadow-premium dark:shadow-premium-dark hover:scale-[1.01] hover:border-brand-500/35 cursor-pointer transition-all">
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-2">
