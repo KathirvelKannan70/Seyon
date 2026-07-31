@@ -88,9 +88,15 @@ const memberSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    houseType: {
+      type: String,
+      enum: ['Own', 'Rented', 'Leased', 'Parental', 'Other', 'N/A'],
+      default: 'Own',
+    },
     monthlyIncome: {
       type: Number,
-      required: true,
+      required: false,
+      default: null,
     },
     nominee: {
       name: { type: String, required: true },

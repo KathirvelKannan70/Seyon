@@ -86,9 +86,9 @@ export const exportReportExcel = async (req, res, next) => {
     if (type === 'members') {
       filename = 'members_report.csv';
       const items = await Member.find().populate({ path: 'kulu', populate: { path: 'area' } });
-      csvContent = 'Member Name,Father Name,Phone,Aadhaar,PAN,Centre Name,Area Name,KYC Status,Status\n';
+      csvContent = 'Member Name,Father Name,Phone,Aadhaar,PAN,Centre Name,Area Name,House Type,Monthly Income,KYC Status,Status\n';
       items.forEach(i => {
-        csvContent += `"${i.name}","${i.fatherName}","${i.phone}","${i.aadhaarNumber}","${i.pan || ''}","${i.kulu?.name || ''}","${i.kulu?.area?.name || ''}","${i.kycStatus}","${i.status}"\n`;
+        csvContent += `"${i.name}","${i.fatherName}","${i.phone}","${i.aadhaarNumber}","${i.pan || ''}","${i.kulu?.name || ''}","${i.kulu?.area?.name || ''}","${i.houseType || 'Own'}","${i.monthlyIncome != null ? i.monthlyIncome : 'N/A'}","${i.kycStatus}","${i.status}"\n`;
       });
 
     } else if (type === 'loans') {

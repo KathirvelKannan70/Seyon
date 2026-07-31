@@ -6,7 +6,7 @@ import { capitalizeWords } from '../utils/textUtils';
 import {
   Plus, Search, ShieldAlert, ShieldCheck, MapPin, Eye,
   QrCode, FileDown, Upload, Trash2, MapPinned, UserCheck, AlertTriangle,
-  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown, Copy, CheckCircle, LayoutList, Grid
+  Gauge, FileText, RefreshCw, ExternalLink, Star, ThumbsUp, ThumbsDown, Copy, CheckCircle, LayoutList, Grid, Pencil
 } from 'lucide-react';
 
 export default function Members() {
@@ -33,13 +33,15 @@ export default function Members() {
   const [forceDeleteChecked, setForceDeleteChecked] = useState(false);
   const [fullProfileMemberId, setFullProfileMemberId] = useState<string | null>(null);
 
-  // Form States
+  // Form & Editing States
+  const [editingMember, setEditingMember] = useState<any>(null);
   const [name, setName] = useState('');
   const [gender, setGender] = useState('Female');
   const [phone, setPhone] = useState('');
   const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [occupation, setOccupation] = useState('');
-  const [monthlyIncome, setMonthlyIncome] = useState<number>(12000);
+  const [houseType, setHouseType] = useState('Own');
+  const [monthlyIncome, setMonthlyIncome] = useState<number | string>('');
   const [fatherName, setFatherName] = useState('');
   const [dob, setDob] = useState('');
   const [age, setAge] = useState<number>(0);
@@ -58,6 +60,17 @@ export default function Members() {
   const [saveAction, setSaveAction] = useState<'close' | 'another'>('close');
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [pincodeError, setPincodeError] = useState<string | null>(null);
+
+  // Helper to format ISO date string or Date object to DD/MM/YYYY
+  const formatDateToDDMMYYYY = (dateVal: any) => {
+    if (!dateVal) return '';
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   // Auto-format DOB as DD/MM/YYYY and calculate age
   const handleDobChange = (val: string) => {
@@ -185,7 +198,7 @@ export default function Members() {
           navigate('/kulus');
         }
       } else {
-        // Full reset — no prefilled values
+        // Reset form fields for adding next member, BUT keep selected centre (kuluId)
         setName('');
         setFatherName('');
         setGender('Female');
@@ -194,21 +207,35 @@ export default function Members() {
         setPhone('');
         setAadhaarNumber('');
         setOccupation('');
-        setMonthlyIncome(0);
+        setHouseType('Own');
+        setMonthlyIncome('');
         setStreet('');
         setVillage('');
-        setDistrict('');
-        setPincode('');
+        setDistrict('Madurai');
+        setPincode('625001');
         setNomineeName('');
         setNomineePhone('');
         setNomineeRelation('Spouse');
-        setKuluId('');
+        // Keep kuluId intact so user stays in the same Centre!
         setKycStatus('pending');
         setFormError(null);
         setPincodeError(null);
-        setSuccessMessage('✅ Member registered! Fill in the next member details.');
+        setSuccessMessage('✅ Member registered! Fill in next member details under this centre.');
         setTimeout(() => setSuccessMessage(null), 4000);
       }
+    },
+    onError: (err: any) => setFormError(err.message),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (updatedMember: any) => fetchAPI(`/members/${editingMember._id}`, 'PUT', updatedMember, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['kulus'] });
+      if (fullProfileMemberId) {
+        queryClient.invalidateQueries({ queryKey: ['memberDetails', fullProfileMemberId] });
+      }
+      closeModal();
     },
     onError: (err: any) => setFormError(err.message),
   });
@@ -291,12 +318,14 @@ export default function Members() {
 
 
   const openAddModal = () => {
+    setEditingMember(null);
     setName('');
     setGender('Female');
     setPhone('');
     setAadhaarNumber('');
     setOccupation('Tailoring');
-    setMonthlyIncome(12000);
+    setHouseType('Own');
+    setMonthlyIncome('');
     setFatherName('');
     setDob('');
     setAge(0);
@@ -314,12 +343,39 @@ export default function Members() {
     setModalOpen(true);
   };
 
+  const openEditModal = (member: any) => {
+    setEditingMember(member);
+    setName(member.name || '');
+    setFatherName(member.fatherName || '');
+    setGender(member.gender || 'Female');
+    setDob(formatDateToDDMMYYYY(member.dob));
+    setAge(member.age || 0);
+    setPhone(member.phone || '');
+    setAadhaarNumber(member.aadhaarNumber || '');
+    setOccupation(member.occupation || '');
+    setHouseType(member.houseType || 'Own');
+    setMonthlyIncome(member.monthlyIncome !== undefined && member.monthlyIncome !== null ? member.monthlyIncome : '');
+    setStreet(member.address?.street || '');
+    setVillage(member.address?.village || '');
+    setDistrict(member.address?.district || 'Madurai');
+    setPincode(member.address?.pincode || '625001');
+    setNomineeName(member.nominee?.name || member.nomineeName || '');
+    setNomineePhone(member.nominee?.phone || member.nomineePhone || '');
+    setNomineeRelation(member.nominee?.relation || member.nomineeRelation || 'Spouse');
+    setKuluId(member.kulu?._id || member.kulu || '');
+    setKycStatus(member.kycStatus || 'pending');
+    setFormError(null);
+    setSuccessMessage(null);
+    setModalOpen(true);
+  };
+
   const closeModal = () => {
     setModalOpen(false);
+    setEditingMember(null);
   };
 
   const duplicateAadhaarMember = aadhaarNumber.length === 12
-    ? membersData?.data?.find((m: any) => m.aadhaarNumber === aadhaarNumber.replace(/\D/g, ''))
+    ? membersData?.data?.find((m: any) => m.aadhaarNumber === aadhaarNumber.replace(/\D/g, '') && m._id !== editingMember?._id)
     : null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -347,7 +403,7 @@ export default function Members() {
       return;
     }
 
-    const payload = {
+    const payload: any = {
       kulu: kuluId,
       name,
       fatherName: fatherName || 'N/A',
@@ -374,7 +430,8 @@ export default function Members() {
         pincode: pincode || '625001',
       },
       occupation,
-      monthlyIncome: Number(monthlyIncome),
+      houseType,
+      monthlyIncome: (monthlyIncome !== '' && monthlyIncome !== null && monthlyIncome !== undefined) ? Number(monthlyIncome) : null,
       nominee: {
         name: nomineeName,
         phone: cleanNomineePhone,
@@ -383,7 +440,11 @@ export default function Members() {
       kycStatus,
     };
 
-    createMutation.mutate(payload);
+    if (editingMember) {
+      updateMutation.mutate(payload);
+    } else {
+      createMutation.mutate(payload);
+    }
   };
 
   const handleImportSubmit = (e: React.FormEvent) => {
@@ -477,7 +538,9 @@ export default function Members() {
         >
           <option value="">All Centre Names</option>
           {kulusData?.data?.map((kulu: any) => (
-            <option key={kulu._id} value={kulu._id}>{kulu.name} ({kulu.meetingDay})</option>
+            <option key={kulu._id} value={kulu._id}>
+              {kulu.kuluNumber ? `Centre ${kulu.kuluNumber} - ` : ''}{kulu.name} ({kulu.meetingDay})
+            </option>
           ))}
         </select>
         <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800 shrink-0">
@@ -572,6 +635,13 @@ export default function Members() {
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => openEditModal(member)}
+                            className="p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-amber-500/10 transition-all"
+                            title="Edit Member Details"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
                             onClick={() => setFullProfileMemberId(member._id)}
                             className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-xl shadow-sm transition-all shrink-0"
                             title="View Full Member Profile"
@@ -664,6 +734,14 @@ export default function Members() {
                 </div>
 
                 <div className="flex gap-1.5 items-center">
+                  <button
+                    onClick={() => openEditModal(member)}
+                    title="Edit Member Details"
+                    className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 rounded-xl hover:scale-105 transition-all"
+                  >
+                    <Pencil size={13} />
+                  </button>
+
                   <button
                     onClick={() => {
                       const qrValue = `Name:${member.name},Aadhaar:${member.aadhaarNumber},Phone:${member.phone},Kulu:${member.kulu?.name}`;
@@ -1025,7 +1103,7 @@ export default function Members() {
               <Plus className="rotate-45" size={20} />
             </button>
 
-            <h3 className="text-base font-bold">Register New Microfinance Member</h3>
+            <h3 className="text-base font-bold">{editingMember ? 'Edit Member Details' : 'Register New Microfinance Member'}</h3>
 
             {successMessage && (
               <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs border border-emerald-500/20 rounded-xl flex items-center gap-2 animate-in fade-in duration-150">
@@ -1117,7 +1195,9 @@ export default function Members() {
                 <select value={kuluId} onChange={(e) => setKuluId(e.target.value)} className="form-input" required>
                   <option value="">Choose Centre...</option>
                   {kulusData?.data?.map((k: any) => (
-                    <option key={k._id} value={k._id}>{k.name} ({k.meetingDay})</option>
+                    <option key={k._id} value={k._id}>
+                      {k.kuluNumber ? `Centre ${k.kuluNumber} - ` : ''}{k.name} ({k.meetingDay})
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1233,38 +1313,68 @@ export default function Members() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Occupation</label>
                   <input type="text" required placeholder="e.g. Tailoring Shop" value={occupation} onChange={(e) => setOccupation(e.target.value)} className="form-input" />
                 </div>
                 <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-400">House Type</label>
+                  <select value={houseType} onChange={(e) => setHouseType(e.target.value)} className="form-input">
+                    <option value="Own">Own House</option>
+                    <option value="Rented">Rented House</option>
+                    <option value="Leased">Leased House</option>
+                    <option value="Parental">Parental House</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-400">Monthly Income (INR)</label>
-                  <input type="number" required value={monthlyIncome} onChange={(e) => setMonthlyIncome(Number(e.target.value))} className="form-input" />
+                  <input type="number" placeholder="Optional" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} className="form-input" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <button
-                  type="submit"
-                  onClick={() => setSaveAction('close')}
-                  disabled={createMutation.isPending}
-                  className="py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 active:scale-95"
-                >
-                  <UserCheck size={14} />
-                  Save & Close
-                </button>
+              {editingMember ? (
+                <div className="flex justify-end gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl shadow-sm transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updateMutation.isPending}
+                    className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                  >
+                    <UserCheck size={14} />
+                    {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <button
+                    type="submit"
+                    onClick={() => setSaveAction('close')}
+                    disabled={createMutation.isPending}
+                    className="py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                  >
+                    <UserCheck size={14} />
+                    Save & Close
+                  </button>
 
-                <button
-                  type="submit"
-                  onClick={() => setSaveAction('another')}
-                  disabled={createMutation.isPending}
-                  className="py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95"
-                >
-                  <Plus size={14} />
-                  Save & Add Another
-                </button>
-              </div>
+                  <button
+                    type="submit"
+                    onClick={() => setSaveAction('another')}
+                    disabled={createMutation.isPending}
+                    className="py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                  >
+                    <Plus size={14} />
+                    Save & Add Another
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
@@ -1491,6 +1601,15 @@ export default function Members() {
                       </div>
 
                       <div className="flex flex-col items-start sm:items-end gap-1.5 z-10">
+                        <button
+                          onClick={() => {
+                            setFullProfileMemberId(null);
+                            openEditModal(m);
+                          }}
+                          className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs rounded-xl border border-amber-500/40 shadow-sm transition-all flex items-center gap-1 mb-1"
+                        >
+                          <Pencil size={13} /> Edit Profile
+                        </button>
                         <span className={`px-3 py-1 text-xs font-bold rounded-xl border ${
                           m.kycStatus === 'verified'
                             ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
@@ -1549,7 +1668,8 @@ export default function Members() {
                           <div><span className="text-slate-400 font-normal">Primary Phone:</span> <br /><strong>{m.phone}</strong></div>
                           <div><span className="text-slate-400 font-normal">Aadhaar No:</span> <br /><strong className="text-brand-500">{m.aadhaarNumber}</strong></div>
                           <div><span className="text-slate-400 font-normal">Occupation:</span> <br /><strong>{m.occupation}</strong></div>
-                          <div><span className="text-slate-400 font-normal">Monthly Income:</span> <br /><strong className="text-emerald-500">₹{m.monthlyIncome?.toLocaleString()}</strong></div>
+                          <div><span className="text-slate-400 font-normal">House Type:</span> <br /><strong>{m.houseType || 'Own'}</strong></div>
+                          <div className="col-span-2"><span className="text-slate-400 font-normal">Monthly Income:</span> <br /><strong className="text-emerald-500">{m.monthlyIncome != null ? `₹${Number(m.monthlyIncome).toLocaleString()}` : 'N/A'}</strong></div>
                         </div>
                       </div>
 

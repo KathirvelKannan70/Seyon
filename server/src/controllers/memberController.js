@@ -180,9 +180,29 @@ export const getMemberById = async (req, res, next) => {
 
 export const updateMember = async (req, res, next) => {
   try {
-    const member = await Member.findByIdAndUpdate(req.params.id, req.body, {
+    const memberId = req.params.id;
+    const memberData = req.body;
+
+    if (memberData.aadhaarNumber) {
+      const existing = await Member.findOne({
+        aadhaarNumber: memberData.aadhaarNumber,
+        _id: { $ne: memberId },
+      });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: `Member with Aadhaar number (${memberData.aadhaarNumber}) already exists in database (${existing.name}).`,
+          isDuplicateAadhaar: true,
+        });
+      }
+    }
+
+    const member = await Member.findByIdAndUpdate(memberId, memberData, {
       new: true,
       runValidators: true,
+    }).populate({
+      path: 'kulu',
+      populate: { path: 'area' },
     });
 
     if (!member) {
@@ -198,6 +218,13 @@ export const updateMember = async (req, res, next) => {
 
     res.status(200).json({ success: true, data: member });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Member with this Aadhaar number already exists in the database.',
+        isDuplicateAadhaar: true,
+      });
+    }
     next(error);
   }
 };
