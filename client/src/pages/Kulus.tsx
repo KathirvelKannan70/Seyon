@@ -437,8 +437,8 @@ export default function Kulus() {
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-base font-extrabold text-slate-900 dark:text-slate-100">{kulu.name}</span>
-                        <span className="px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">
-                          No. {kulu.kuluNumber}
+                        <span className="px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono flex items-center gap-1">
+                          <Users size={11} /> {kulu.memberCount || 0} Members
                         </span>
                       </div>
                       <span className="text-[11px] font-medium text-slate-400 dark:text-slate-400 mt-0.5">
