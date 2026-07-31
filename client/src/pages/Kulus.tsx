@@ -271,8 +271,11 @@ export default function Kulus() {
   // Filter centres live based on search term
   const filteredKulus = sortedKulus.filter((kulu: any) => {
     if (!searchTerm.trim()) return true;
-    const q = searchTerm.toLowerCase().trim();
-    const kuluNumStr = `no. ${kulu.kuluNumber} #${kulu.kuluNumber} ${kulu.kuluNumber}`.toLowerCase();
+    const rawQ = searchTerm.toLowerCase().trim();
+    const cleanedQ = rawQ.replace(/^(no\.?\s*|#\s*)/i, '');
+    const isPureNumber = /^\d+$/.test(cleanedQ);
+
+    const kuluNumStr = String(kulu.kuluNumber || '').toLowerCase().trim();
     const nameStr = (kulu.name || '').toLowerCase();
     const areaStr = (kulu.area?.name || '').toLowerCase();
     const officerStr = (kulu.fieldOfficer?.name || '').toLowerCase();
@@ -280,15 +283,40 @@ export default function Kulus() {
     const schemeStr = (kulu.schemeType || '').toLowerCase();
     const meetingDayStr = (kulu.meetingDay || '').toLowerCase();
 
+    if (isPureNumber) {
+      // For numeric search (e.g. "15"), match Centre Number, Name, Area, Officer, Incharge, but NOT schemeType ("15k")
+      return (
+        kuluNumStr === cleanedQ ||
+        kuluNumStr.includes(cleanedQ) ||
+        nameStr.includes(rawQ) ||
+        areaStr.includes(rawQ) ||
+        officerStr.includes(rawQ) ||
+        inchargeStr.includes(rawQ)
+      );
+    }
+
     return (
-      kuluNumStr.includes(q) ||
-      nameStr.includes(q) ||
-      areaStr.includes(q) ||
-      officerStr.includes(q) ||
-      inchargeStr.includes(q) ||
-      schemeStr.includes(q) ||
-      meetingDayStr.includes(q)
+      kuluNumStr === rawQ ||
+      kuluNumStr.includes(rawQ) ||
+      `no. ${kuluNumStr}`.includes(rawQ) ||
+      `#${kuluNumStr}`.includes(rawQ) ||
+      nameStr.includes(rawQ) ||
+      areaStr.includes(rawQ) ||
+      officerStr.includes(rawQ) ||
+      inchargeStr.includes(rawQ) ||
+      schemeStr.includes(rawQ) ||
+      meetingDayStr.includes(rawQ)
     );
+  }).sort((a: any, b: any) => {
+    if (!searchTerm.trim()) return 0;
+    const rawQ = searchTerm.toLowerCase().trim();
+    const cleanedQ = rawQ.replace(/^(no\.?\s*|#\s*)/i, '');
+    const kuluNumA = String(a.kuluNumber || '').toLowerCase().trim();
+    const kuluNumB = String(b.kuluNumber || '').toLowerCase().trim();
+
+    if (kuluNumA === cleanedQ && kuluNumB !== cleanedQ) return -1;
+    if (kuluNumB === cleanedQ && kuluNumA !== cleanedQ) return 1;
+    return 0;
   });
 
   // Export Centres to Excel CSV format
